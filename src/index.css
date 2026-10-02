@@ -1,0 +1,29 @@
+@import url(../node_modules/@flaticon/flaticon-uicons/css/all/all.css);
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  src: url('assets/fonts/CabinetGrotesk-Variable.ttf');
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('assets/fonts/GeneralSans-Variable.ttf');
+}
+
+@theme {
+  --font-cabinet: 'Cabinet Grotesk', sans-serif;
+  --font-general: 'General Sans', sans-serif;
+  --color-th-plain-white: #f3f6f0;
+  --color-th-plain-black: #1c2929;
+  --color-th-green-darker: #25373d;
+  --color-th-green-dark: #9eb5af;
+  --color-th-green-light: #b8cbc7;
+  --color-th-purple-darker: #b09fb3;
+  --color-th-purple-dark: #c4b5c7;
+  --color-th-purple-light: #dfc0d6;
+  --color-th-cream: #e7e8de;
+  --color-th-cream-pale: #dcdaca;
+  --color-th-moss: #a4b0a3;
+  --color-th-oak: #8c8268;
+  --blur-th: 2px;
+}
