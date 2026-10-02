@@ -26,15 +26,15 @@ function Home() {
             {/* INFO DIV */}
             <div className="flex w-full gap-8">
               <div className="flex-1 flex flex-col gap-3">
-                <p className="text-xs/[90%]"><span className="text-2xl/[90%] font-medium font-cabinet">72</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">72</span>bpm</p>
                 <p className="text-lg/[90%]">Average</p>
               </div>
               <div className="flex-1 flex flex-col gap-3">
-                <p className="text-xs/[90%]"><span className="text-2xl/[90%] font-medium font-cabinet">112</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">112</span>bpm</p>
                 <p className="text-lg/[90%]">Peak</p>
               </div>
               <div className="flex-1 flex flex-col gap-3">
-                <p className="text-xs/[90%]"><span className="text-2xl/[90%] font-medium font-cabinet">60</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">60</span>bpm</p>
                 <p className="text-lg/[90%]">Resting</p>
               </div>
             </div>
