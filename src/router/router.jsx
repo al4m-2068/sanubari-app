@@ -20,7 +20,8 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Theme/>,
     children: [
-      { index: true, element: <Home/> },
+      { index: true, element: <Navigate to={'home'}/>},
+      { path: 'home', element: <Home/>},
       { path: 'insights', element: <Insights/>, children: [
         { index: true, element: <Navigate to="overview" replace /> },
         { path: 'overview', element: <Overview/> },
@@ -32,7 +33,7 @@ export const router = createBrowserRouter([
         ]},
       ]},
       { path: 'chatbot', element: <Chatbot/> },
-      { path: 'chatbot/:chatId', element: <ChatPage/> },
+      { path: 'chatbot/session'/* 'chatbot/:chatId' */, element: <ChatPage/> },
       { path: 'profile', element: <Profile/> },
       { path: 'measure', element: <Camera/> },
     ],

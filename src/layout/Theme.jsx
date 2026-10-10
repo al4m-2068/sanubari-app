@@ -1,9 +1,11 @@
 import { useNavigate, Outlet, NavLink, useLocation } from "react-router"
 import Button from "../components/atom/Button"
 import { useSariAuthStore } from "../data/sariAuthStore"
+import bgMain from '/src/assets/images/bg-main-gradient.png'
+import bgTwo from '/src/assets/images/bg-two-gradient.png'
 
 const pageList = [
-  { path: '/', title: 'Home', icon: 'fi-rr-home' },
+  { path: '/home', title: 'Home', icon: 'fi-rr-home' },
   { path: '/insights', title: 'Insights', icon: 'fi-rr-heart-rate' },
   { path: '/measure', title: 'Measure', icon: 'fi-rr-camera-viewfinder' },
   { path: '/chatbot', title: 'Chatbot', icon: 'fi-rr-beacon' },
@@ -11,14 +13,12 @@ const pageList = [
 ]
 
 function Theme() {
-  const user = useSariAuthStore(state => state.user)
-  const navigate = useNavigate()
   const pathname = useLocation().pathname
 
   // if (!user) return <Navigate to={'/auth/sign-in'} />
 
   return (
-    <>
+    <div style={{backgroundImage: `url(${pathname == '/home' ? bgMain : bgTwo})`}} className="bg-size-[100%_100%] bg-fixed w-full h-full">
       <main className="relative flex flex-col h-full px-4 overflow-y-auto pb-27 scrollbar-none">
         <Outlet/>
       </main>
@@ -35,7 +35,7 @@ function Theme() {
           ))}
         </ul>
       </nav>
-    </>
+    </div>
   )
 }
 

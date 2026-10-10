@@ -64,21 +64,21 @@ function Home() {
       </div>
     </header>
     <div className="flex flex-col gap-5 pt-4">
-      <h1 className="font-bold font-cabinet text-4xl text-th-plain-black">
+      <h1 className="text-4xl font-bold font-cabinet text-th-plain-black">
         Hello, {user.name.first}!
         <br />
         <span className="font-medium">How are you today?</span>
       </h1>
-      <div className="grid grid-cols-5 auto-rows-max gap-2">
-        <div className="rounded-3xl flex flex-col col-span-5 h-74 bg-linear-90 from-th-green-light to-th-green-dark">
+      <div className="grid grid-cols-5 gap-2 auto-rows-max">
+        <div className="flex flex-col col-span-5 rounded-3xl h-74 bg-linear-90 from-th-green-light to-th-green-dark">
           <Card className={'h-full'}>
             <div className="flex justify-between">
               <p className="flex flex-col text-xs/[90%] gap-1 font-medium">
                 Last Measurement
                 <span className="font-normal">{formattedDate}</span>
               </p>
-              <span className="flex gap-2 px-3 py-1 rounded-lg bg-th-green-dark/20 text-xs font-semibold text-th-green-dark items-center">
-                <div className="size-2 bg-th-green-dark rounded-full"></div>
+              <span className="flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-lg bg-th-green-dark/20 text-th-green-dark">
+                <div className="rounded-full size-2 bg-th-green-dark"></div>
                 {heartRateStatus}
               </span>
             </div>
@@ -87,17 +87,17 @@ function Home() {
 
             {/* INFO DIV */}
             <div className="flex w-full gap-8">
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{avgBpm ?? '-'}</span>bpm</p>
                 <p className="text-lg/[90%]">Average</p>
               </div>
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{peakBpm ?? '—'}</span>bpm</p>
                 <p className="text-lg/[90%]">Peak</p>
               </div>
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{lowestBpm ?? '—'}</span>bpm</p>
-                <p className="text-lg/[90%]">Resting</p>
+                <p className="text-lg/[90%]">Lowest</p>
               </div>
             </div>
           </Card>
@@ -112,19 +112,19 @@ function Home() {
         {/* CTA to MEASUREMENT CAM */}
         <Button className={'items-center bg-th-green-light text-white rounded-3xl relative col-span-4 overflow-hidden px-6 text-left h-18'}>
           <p className="text-xl/[100%] font-medium">Quick Daily<br />Measurement</p>
-          <div className="flex items-center rounded-full justify-center size-30 absolute -right-6 bg-th-green-dark">
+          <div className="absolute flex items-center justify-center rounded-full size-30 -right-6 bg-th-green-dark">
             <i class="fi fi-sr-heart text-[44px]/[90%]"></i>
           </div>
         </Button>
 
         {/* CTA to INSIGHTS & HEART STATUS */}
-        <div className="h-37 grid col-span-5 grid-cols-subgrid grid-rows-3">
+        <div className="grid col-span-5 grid-rows-3 h-37 grid-cols-subgrid">
           {/* CTA to INSIGHTS */}
           <Card className={'col-span-3 row-span-3 bg-linear-0 from-th-purple-dark to-th-purple-light gap-4'}>
-            <p className="flex justify-between items-center text-sm/[90%] text-th-purple-darker font-medium"><span className="flex size-3 bg-th-purple-darker rounded-full"></span>Your Weekly Trend</p>
-            <div className="grid h-full grid-cols-7 items-end gap-1">
+            <p className="flex justify-between items-center text-sm/[90%] text-th-purple-darker font-medium"><span className="flex rounded-full size-3 bg-th-purple-darker"></span>Your Weekly Trend</p>
+            <div className="grid items-end h-full grid-cols-7 gap-1">
               {barHeights.map((height, index) => (
-                <div key={index} style={{ height: `${height}%` }} className="bg-linear-0 from-th-purple-dark to-th-plain-white rounded-t-lg transition-all duration-500" />
+                <div key={index} style={{ height: `${height}%` }} className="transition-all duration-500 rounded-t-lg bg-linear-0 from-th-purple-dark to-th-plain-white" />
               ))}
             </div>
           </Card>

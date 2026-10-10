@@ -175,8 +175,8 @@ export function Overview() {
   return (
     <div className="flex flex-col gap-8 w-full text-xs/[110%] font-medium pt-3">
       <p className="mx-auto text-center w-50">{overviewSummary}</p>
-      <div className="flex flex-col w-full gap-4 text-th-green-darker ">
-        <Card className={'h-64 grid auto-rows-max gap-x-2 gap-y-4 grid-cols-[132px_132px_1fr] w-full h-'}>
+      <div className="flex flex-col w-full gap-4 text-th-green-darker">
+        <Card className={'h-64 grid auto-rows-max gap-x-2 gap-y-4 grid-cols-[132px_132px_1fr] w-full'}>
           <div className="flex flex-col gap-6"> 
               <p className="text-lg/[110%] font-medium flex flex-col gap-1">Your average heart rate <span className="text-xs/[90%] text-th-plain-grey font-normal">Last 7 days</span></p>
             <h1 className="text-[64px]/[90%] font-bold font-cabinet flex items-start gap-1">{overviewAverage ?? '—'}<i className="text-xs fi fi-sr-heart text-th-purple-light"></i></h1>
@@ -185,13 +185,13 @@ export function Overview() {
           {/* DIV for CHART [BACKEND] */}
           <div className="col-span-2"></div>
 
-          <Card className="font-normal border-b-2 border-th-green-dark rounded-2xl">
-            <p className="flex items-center justify-between text-2xl font-medium font-cabinet">{overviewPeak ?? '—'}<span className="text-xs font-normal font-general text-th-green-dark">bpm</span></p>
-            <p className="text-xs">Peak</p>
+          <Card className="gap-2 font-normal border-b-2 border-th-green-dark rounded-2xl">
+            <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">{overviewPeak ?? '—'}<span className="text-xs/[90%] font-normal font-general text-th-green-dark">bpm</span></p>
+            <p className="text-xs/[90%]">Peak</p>
           </Card>
-          <Card className="font-normal border-b-2 border-th-cream-pale rounded-2xl">
-            <p className="flex items-center justify-between text-2xl font-medium font-cabinet">{overviewLowest ?? '—'}<span className="text-xs font-normal font-general text-th-cream-pale">bpm</span></p>
-            <p className="text-xs">Lowest</p>
+          <Card className="gap-2 font-normal border-b-2 border-th-cream-pale rounded-2xl">
+            <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">{overviewLowest ?? '—'}<span className="text-xs font-normal font-general text-th-cream-pale">bpm</span></p>
+            <p className="text-xs/[90%]">Lowest</p>
           </Card>
           <Card className={`relative items-center py-3 overflow-hidden rounded-lg ${overviewStatus == 'Great!' ? 'bg-th-green-dark/20 text-th-green-dark ' : 'bg-th-purple-light text-th-purple-darker'}`}>
             <p className="flex items-center text-xs/[110%] font-semibold text-center z-2">{overviewStatus}</p>
@@ -223,7 +223,7 @@ export function Overview() {
 
 export function History() {
   return (
-    <div className="flex flex-col items-center w-full gap-5 pt-13">
+    <div className="flex flex-col items-center w-full gap-5 pt-8">
       {/* DIV of NAVIGATION */}
       <div className="flex border-th-green-light/20 rounded-full border-[1.2px] p-1">
         <NavLink to={'/insights/history/weekly'} className={({ isActive }) => `size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-th-plain-white' : 'text-th-green-light'}`}>W</NavLink>
