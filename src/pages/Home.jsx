@@ -102,26 +102,26 @@ function Home() {
               </div>
             </div>
           </Card>
-          <Link to={'/insights'} className="flex items-center justify-between p-4 text-sm/[90%] text-white">View Last Measurement <i className="fi fi-rr-arrow-right text-base/[90%]"></i></Link>
+          <Link to={'/insights'} className="flex items-center justify-between p-4 text-sm/[90%] text-white">View Last Measurement <i className="fi fi-rr-arrow-right text-base/[80%]"></i></Link>
         </div>
 
         {/* CTA to CHATBOT */}
-        <Button className={'items-center justify-center bg-th-green-dark bg-[radial-gradient(68.99%_68.99%_at_50%_31.31%,#6A624D_0%,#8C8268_18.54%,#A4B0A3_46.99%,#DCDACA_100%)] text-white rounded-3xl'}>
+        <Button className={'items-center justify-center bg-th-green-dark bg-[radial-gradient(68.99%_68.99%_at_50%_31.31%,#6A624D_0%,#8C8268_18.54%,#A4B0A3_46.99%,#DCDACA_100%)] text-white rounded-3xl'} onClick={() => navigate('/chatbot')}>
           <i className="fi fi-br-question text-2xl/[80%]"></i>
         </Button>
 
         {/* CTA to MEASUREMENT CAM */}
-        <Button className={'items-center bg-th-green-light text-white rounded-3xl relative col-span-4 overflow-hidden px-6 text-left h-18'}>
+        <Button className={'items-center bg-th-green-light text-white rounded-3xl relative col-span-4 overflow-hidden px-6 text-left h-18'} onClick={() => navigate('/measure')}>
           <p className="text-xl/[100%] font-medium">Quick Daily<br />Measurement</p>
           <div className="absolute flex items-center justify-center rounded-full size-30 -right-6 bg-th-green-dark">
-            <i class="fi fi-sr-heart text-[44px]/[90%]"></i>
+            <i class="fi fi-sr-heart text-[44px]/[80%]"></i>
           </div>
         </Button>
 
         {/* CTA to INSIGHTS & HEART STATUS */}
         <div className="grid col-span-5 grid-rows-3 h-37 grid-cols-subgrid">
           {/* CTA to INSIGHTS */}
-          <Card className={'col-span-3 row-span-3 bg-linear-0 from-th-purple-dark to-th-purple-light gap-4'}>
+          <Card className={'col-span-3 row-span-3 bg-linear-0 from-th-purple-dark to-th-purple-light gap-4'} onClick={() => navigate('/insights')}>
             <p className="flex justify-between items-center text-sm/[90%] text-th-purple-darker font-medium"><span className="flex rounded-full size-3 bg-th-purple-darker"></span>Your Weekly Trend</p>
             <div className="grid items-end h-full grid-cols-7 gap-1">
               {barHeights.map((height, index) => (
