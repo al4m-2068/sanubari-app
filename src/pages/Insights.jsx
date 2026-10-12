@@ -5,6 +5,8 @@ import { twMerge } from "tailwind-merge"
 import { Popover } from "radix-ui"
 import { useState } from "react"
 
+const EMPTY_MEASUREMENTS = []
+
 // NEW THING: Declare the classes so tailwind render it for incoming non render usage
 const trendBarClass = "w-full rounded-2xl bg-[linear-gradient(to_top,var(--color-th-purple-light),var(--color-th-green-light),var(--color-th-green-dark),var(--color-th-green-darker))]"
 const measureStatusClasses = {
@@ -156,7 +158,7 @@ function Insights() {
 export default Insights
 
 export function Overview() {
-  const measurements = useSariAuthStore(state => state.user?.measurementData ?? [])
+  const measurements = useSariAuthStore(state => state.user?.measurementData ?? EMPTY_MEASUREMENTS)
   const weeklyTrend = getWeeklyTrend(measurements)
   const overviewDateKeys = new Set(weeklyTrend.map(({ dateKey }) => dateKey))
   const overviewReadings = [...getReadingsByDate(measurements)]

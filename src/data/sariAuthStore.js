@@ -5,6 +5,7 @@ import '/src/assets/images/DSC05019.JPG';
 const MOCK_USERS = [
   {
     id: 1,
+    source: 'mock',
     name: {
       first: 'Albar',
       last: 'Abdul Malik',
@@ -37,14 +38,15 @@ const MOCK_USERS = [
 ]
 
 export const useSariAuthStore = create(
-  // persist(
+  persist(
     (set, get) => ({
-      user: /*MOCK_USERS[0]*/ null,
+      user: null,
       error: null,
 
       clearError: () => set({ error: null }),
+
       login: (email, password) => {
-        const foundUser = MOCK_USERS.find(u => 
+        const foundUser = MOCK_USERS.find(u =>
           u.email === email && u.password === password
         )
 
@@ -54,29 +56,54 @@ export const useSariAuthStore = create(
             error: null
           })
           return true
-        } else {
-          set({
-            error: `Email or password don't match or no account registered.`
-          })
-          return false
         }
+
+        set({
+          error: `Email or password don't match or no account registered.`
+        })
+        return false
       },
+
+      loginWithGoogle: (firebaseUser) => {
+        get().syncFirebaseUser(firebaseUser)
+        return true
+      },
+
+      syncFirebaseUser: (firebaseUser) => {
+        const currentUser = get().user
+
+        if (!firebaseUser) {
+          if (currentUser?.source === 'firebase') {
+            set({ user: null, error: null })
+          }
+          return
+        }
+
+        if (currentUser?.source === 'firebase' && currentUser.id === firebaseUser.uid) {
+          return
+        }
+
+        set({
+          user: {
+            id: firebaseUser.uid,
+            source: 'firebase',
+            name: {
+              first: firebaseUser.displayName?.split(' ')[0] || '',
+              last: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+            },
+            email: firebaseUser.email,
+            password: null,
+            profilePicture: firebaseUser.photoURL,
+            measurementData: [],
+          },
+          error: null,
+        })
+      },
+
       signup: (email, password, firstName, lastName) => {
-        const foundUser = MOCK_USERS.find(u => 
+        const foundUser = MOCK_USERS.find(u =>
           u.email === email
         )
-
-        const newUserTemplate = {
-          id: MOCK_USERS.length + 1 /* Ntar ganti jadi Date.now() aja [BACKEND] */,
-          name: {
-            first: firstName,
-            last: lastName,
-          },
-          email: email,
-          password: password,
-          profilePicture: null,
-          measurementData: null,
-        }
 
         if (foundUser) {
           set({
@@ -85,32 +112,39 @@ export const useSariAuthStore = create(
           return false
         }
 
-        set({ user: newUserTemplate, error: null })
+        const newUserTemplate = {
+          id: MOCK_USERS.length + 1,
+          source: 'mock',
+          name: {
+            first: firstName,
+            last: lastName,
+          },
+          email,
+          password,
+          profilePicture: null,
+          measurementData: [],
+        }
+
         MOCK_USERS.push(newUserTemplate)
+
+        set({
+          user: newUserTemplate,
+          error: null,
+        })
+
         return true
       },
-      logout: () => set({ user: null, error: null }),
-      editAccount: (email, password, firstName, lastName) => {
+
+      logout: () => set({
+        user: null,
+        error: null,
+      }),
+
+      editAccount: (email, password, firstName, lastName, profilePicture) => {
         const currentUser = get().user
+
         if (!currentUser) {
           set({ error: 'You must be signed in to edit your account.' })
-          return false
-        }
-
-        const normalizedEmail = email.trim()
-        const existingUser = MOCK_USERS.find(user =>
-          user.id !== currentUser.id &&
-          user.email.toLowerCase() === normalizedEmail.toLowerCase()
-        )
-
-        if (existingUser) {
-          set({ error: 'An account with this email already exists.' })
-          return false
-        }
-
-        const userIndex = MOCK_USERS.findIndex(user => user.id === currentUser.id)
-        if (userIndex === -1) {
-          set({ error: 'Unable to find your account.' })
           return false
         }
 
@@ -121,17 +155,25 @@ export const useSariAuthStore = create(
             first: firstName.trim(),
             last: lastName.trim(),
           },
-          email: normalizedEmail,
-          password,
+          email: email.trim(),
+          password: currentUser.source === 'firebase' ? null : password,
+          profilePicture: profilePicture !== undefined ? profilePicture : currentUser.profilePicture,
         }
+        
+        const mockIndex = MOCK_USERS.findIndex(u => u.id === currentUser.id)
+        if (mockIndex !== -1) MOCK_USERS[mockIndex] = updatedUser
 
-        MOCK_USERS[userIndex] = updatedUser
-        set({ user: updatedUser, error: null })
+        set({
+          user: updatedUser,
+          error: null,
+        })
+
         return true
-      }
+      },
     }),
-  //   {
-  //     name: 'sari-auth'
-  //   }
-  // // )
+
+    {
+      name: 'sari-auth',
+    }
+  )
 )
