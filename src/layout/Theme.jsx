@@ -1,4 +1,4 @@
-import { useNavigate, Outlet, NavLink, useLocation } from "react-router"
+import { useNavigate, Outlet, NavLink, useLocation, Navigate } from "react-router"
 import Button from "../components/atom/Button"
 import { useSariAuthStore } from "../data/sariAuthStore"
 import bgMain from '/src/assets/images/bg-main-gradient.png'
@@ -14,8 +14,9 @@ const pageList = [
 
 function Theme() {
   const pathname = useLocation().pathname
+  const user = useSariAuthStore(state => state.user)
 
-  // if (!user) return <Navigate to={'/auth/sign-in'} />
+  if (!user) return <Navigate to={'/welcome'} />
 
   return (
     <div style={{backgroundImage: `url(${pathname == '/home' ? bgMain : bgTwo})`}} className="bg-size-[100%_100%] bg-fixed w-full h-full">

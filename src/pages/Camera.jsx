@@ -3,7 +3,8 @@ import { twMerge } from "tailwind-merge"
 import Button from "../components/atom/Button"
 import faceGuide from "/src/assets/images/face-guideline.svg"
 import Card from "../components/atom/Card"
-import { NavLink } from "react-router"
+import { Link } from "react-router"
+import Drawer from "../components/Drawer"
 
 const requirementsClass = {
   check: 'text-th-plain-white bg-th-green-dark',
@@ -179,17 +180,20 @@ function Camera() {
 
         {/* CARD for MOVEMENT POPUP [BACKEND] */}
         {stage === 'measuring' && moveTooMuch && (
-          <div className="absolute top-0 left-0 flex flex-col items-center justify-center w-full h-full bg-th-green-light/50 backdrop-blur-xs">
-            <Card className={'rounded-3xl bg-th-plain-white px-9 py-16 text-th-green-light items-center text-center gap-6'}>
-              <i className="fi fi-sr-limit-hand text-[64px]/[80%] text-th-green-dark"></i>
+          <Drawer onClose={() => {
+            setMoveTooMuch(false)
+            setStage('face')
+          }} isOpen={moveTooMuch} className={'h-74 justify-between relative'}>
+            <i className="fi fi-rr-seal-exclamation text-[166px]/[80%] absolute -z-1 top-1/2 -translate-y-1/2 text-th-green-dark/20"></i>
+            <div className="flex flex-col gap-2">
               <p className="text-lg/[110%] text-th-green-dark">Stay Still!</p>
               <h1 className="text-4xl/[110%] font-medium text-th-green-darker font-cabinet">You're moving<br/>way too much!</h1>
-              <Button onClick={() => {
-                setMoveTooMuch(false)
-                setStage('face')
-              }} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Okay</Button>
-            </Card>
-          </div>
+            </div>
+            <Button onClick={() => {
+              setMoveTooMuch(false)
+              setStage('face')
+            }} className={'text-xs/[90%] font-medium w-full h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Okay</Button>
+          </Drawer>
         )}
 
         {/* DIV for RESULT [BACKEND] */}
@@ -222,25 +226,25 @@ function Camera() {
                   <img src={overviewStatus == 'Great!' ? "/src/assets/images/heart-small.svg" : "/src/assets/images/heart-small-poor.svg"} alt="heart-icon" className='absolute h-auto max-w-none w-19 -bottom-8' />
                 </Card>
               </Card>
-              <NavLink to={'/insights'} className={'h-13 w-full text-xs/[90%] font-medium text-th-purple-darker bg-linear-20 from-th-purple-dark to-th-purple-light rounded-3xl flex items-center justify-center'}>
+              <Link to={'/insights'} className={'h-13 w-full text-xs/[90%] font-medium text-th-purple-darker bg-linear-20 from-th-purple-dark to-th-purple-light rounded-3xl flex items-center justify-center'}>
                 View your Weekly Insights
-              </NavLink>
+              </Link>
               <Card className={'bg-th-green-dark bg-[radial-gradient(68.99%_68.99%_at_50%_31.31%,#6A624D_0%,#8C8268_18.54%,#A4B0A3_46.99%,#DCDACA_100%)] p-0 rounded-3xl overflow-clip flex-row w-full h-max shrink-0'}>
                 <div className="flex items-center self-stretch justify-center flex-1 shrink-0 text-th-cream-pale bg-th-cream aspect-square">
                   <i className="fi fi-rr-beacon text-5xl/[80%]"></i>
                 </div>
                 <div className="flex flex-col items-start gap-3 p-4 flex-2">
                   <p className="font-medium text-xs/[110%] text-th-plain-white">Your heart rate is within a healthy range! want to see how it compares with your past measurements?</p>
-                  <NavLink to={'/chatbot/session'} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white px-4 py-3 rounded-2xl text-xs/[100%] text-th-plain-black'}>Ask SARI Chatbot</NavLink>
+                  <Link to={'/chatbot/session'} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white px-4 py-3 rounded-2xl text-xs/[100%] text-th-plain-black'}>Ask SARI Chatbot</Link>
                 </div>
               </Card>
             </div>
-            <NavLink onClick={() => {
+            <Link onClick={() => {
               setMoveTooMuch(false)
               setStage('')
               setResultStat(0)
               setStageCompleted(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])))
-            }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Back to Dashboard</NavLink>
+            }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Back to Dashboard</Link>
           </>
         )}
         </>

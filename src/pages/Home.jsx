@@ -1,4 +1,4 @@
-import { Link } from "react-router"
+import { Link, Navigate, useNavigate } from "react-router"
 import Card from "../components/atom/Card"
 import { useSariAuthStore } from "../data/sariAuthStore"
 import Button from "../components/atom/Button"
@@ -26,6 +26,7 @@ function formatMeasurementDate(date) {
 }
 
 function Home() {
+  const navigate = useNavigate()
   const user = useSariAuthStore(state => state.user)
   const mData = useSariAuthStore(state => state.user?.measurementData ?? [])
   const [barHeights] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * (100 - 30 + 1)) + 30))
@@ -51,7 +52,7 @@ function Home() {
   const heartRateHealth = avgBpm === null
     ? 'No heart rate data available'
     : `Your average heart rate is ${heartRateStatus === 'Stable' ? 'within a healthy range' : 'outside the healthy range'}`
-
+    
   return (
     <>
     <header className="sticky top-0 left-0 flex items-center justify-between w-full py-4 z-999">
@@ -60,7 +61,7 @@ function Home() {
         <Button className='flex items-center justify-center bg-white cursor-pointer rounded-2xl text-th-green-dark size-9 shrink-0'>
           <i className="fi fi-rr-bell text-base/[90%]"></i>
         </Button>
-        <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src="https://m.media-amazon.com/images/M/MV5BMjI1ODZkYTgtYTY3Yy00ZTJkLWFkOTgtZDUyYWM4MzQwNjk0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" className="object-cover object-center size-10 rounded-2xl" alt={`${user.name} profile picture`} /></Button>
+        <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src={user.profilePicture} className="object-cover object-center size-10 rounded-2xl" alt={`${user.name} profile picture`} /></Button>
       </div>
     </header>
     <div className="flex flex-col gap-5 pt-4">
@@ -106,7 +107,7 @@ function Home() {
 
         {/* CTA to CHATBOT */}
         <Button className={'items-center justify-center bg-th-green-dark bg-[radial-gradient(68.99%_68.99%_at_50%_31.31%,#6A624D_0%,#8C8268_18.54%,#A4B0A3_46.99%,#DCDACA_100%)] text-white rounded-3xl'}>
-          <i className="fi fi-br-question text-2xl/[90%]"></i>
+          <i className="fi fi-br-question text-2xl/[80%]"></i>
         </Button>
 
         {/* CTA to MEASUREMENT CAM */}

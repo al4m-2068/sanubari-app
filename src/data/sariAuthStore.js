@@ -11,8 +11,7 @@ const MOCK_USERS = [
     },
     email: 'albar2806@student.abudzar.sch.id',
     password: '12345678',
-    birthDate: '2010-06-28',
-    profilePicture: '/albar.png',
+    profilePicture: 'https://m.media-amazon.com/images/M/MV5BMjI1ODZkYTgtYTY3Yy00ZTJkLWFkOTgtZDUyYWM4MzQwNjk0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
     measurementData: [
       { date: '2026-10-05T14:00:00.000Z', bpm: 102 },
       { date: '2026-10-04T14:20:00.000Z', bpm: 62 },
@@ -39,14 +38,15 @@ const MOCK_USERS = [
 
 export const useSariAuthStore = create(
   // persist(
-    (set) => ({
-      user: MOCK_USERS[0],
+    (set, get) => ({
+      user: /*MOCK_USERS[0]*/ null,
       error: null,
 
+      clearError: () => set({ error: null }),
       login: (email, password) => {
-        const foundUser = MOCK_USERS.find(u => {
-          u.email == email && u.password == password
-        })
+        const foundUser = MOCK_USERS.find(u => 
+          u.email === email && u.password === password
+        )
 
         if (foundUser) {
           set({
@@ -56,12 +56,79 @@ export const useSariAuthStore = create(
           return true
         } else {
           set({
-            error: 'Akun tidak ditemukan'
+            error: `Email or password don't match or no account registered.`
           })
           return false
         }
       },
-      logout: set({ user: null, error: null }),
+      signup: (email, password, firstName, lastName) => {
+        const foundUser = MOCK_USERS.find(u => 
+          u.email === email
+        )
+
+        const newUserTemplate = {
+          id: MOCK_USERS.length + 1 /* Ntar ganti jadi Date.now() aja [BACKEND] */,
+          name: {
+            first: firstName,
+            last: lastName,
+          },
+          email: email,
+          password: password,
+          profilePicture: null,
+          measurementData: null,
+        }
+
+        if (foundUser) {
+          set({
+            error: 'Account already exist'
+          })
+          return false
+        }
+
+        set({ user: newUserTemplate, error: null })
+        MOCK_USERS.push(newUserTemplate)
+        return true
+      },
+      logout: () => set({ user: null, error: null }),
+      editAccount: (email, password, firstName, lastName) => {
+        const currentUser = get().user
+        if (!currentUser) {
+          set({ error: 'You must be signed in to edit your account.' })
+          return false
+        }
+
+        const normalizedEmail = email.trim()
+        const existingUser = MOCK_USERS.find(user =>
+          user.id !== currentUser.id &&
+          user.email.toLowerCase() === normalizedEmail.toLowerCase()
+        )
+
+        if (existingUser) {
+          set({ error: 'An account with this email already exists.' })
+          return false
+        }
+
+        const userIndex = MOCK_USERS.findIndex(user => user.id === currentUser.id)
+        if (userIndex === -1) {
+          set({ error: 'Unable to find your account.' })
+          return false
+        }
+
+        const updatedUser = {
+          ...currentUser,
+          name: {
+            ...currentUser.name,
+            first: firstName.trim(),
+            last: lastName.trim(),
+          },
+          email: normalizedEmail,
+          password,
+        }
+
+        MOCK_USERS[userIndex] = updatedUser
+        set({ user: updatedUser, error: null })
+        return true
+      }
     }),
   //   {
   //     name: 'sari-auth'

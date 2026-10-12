@@ -7,13 +7,24 @@ import AuthLayout from "../layout/AuthLayout";
 import SignIn from "../pages/auth/SignIn";
 import Profile from "../pages/Profile";
 import Camera from "../pages/Camera";
+import SignUp from "../pages/auth/SignUp";
+import Onboarding, { Splash } from "../pages/Onboarding";
 
 export const router = createBrowserRouter([
+  {
+    path: '/welcome',
+    element: <Splash/>
+  },
+  {
+    path: '/onboarding',
+    element: <Onboarding/>
+  },
   {
     path: '/auth',
     element: <AuthLayout/>,
     children: [
-      { path: 'sign-in', element: <SignIn/> }
+      { path: 'sign-in', element: <SignIn/> },
+      { path: 'sign-up', element: <SignUp/> }
     ]
   },
   {
