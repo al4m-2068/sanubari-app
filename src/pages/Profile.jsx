@@ -6,6 +6,10 @@ import { useSariAuthStore } from "../data/sariAuthStore"
 import { useNavigate } from "react-router"
 import Drawer from "../components/Drawer"
 import Accordion from "../components/Accordion"
+import { signOut } from "firebase/auth"
+import { auth } from "../firebase"
+
+
 
 const faqContents = [
   {title: 'How does SANUBARI measure my heart rate using a camera?', desc: 'SANUBARI uses rPPG to analyze subtle facial color changes captured by your camera and estimate your heart rate. Use good lighting and remain still.'},
@@ -24,36 +28,70 @@ function Profile() {
   const [savePopup, setSavePopup] = useState(false)
   const [editOverlay, setEditOverlay] = useState(false)
   const [supportOverlay, setSupportOverlay] = useState(false)
+  const [newPicture, setNewPicture] = useState(undefined)
   const profilePictureInput = useRef(null)
   const navigate = useNavigate()
   const { register, handleSubmit, reset, trigger, formState: { errors } } = useForm({
     defaultValues: {
-      firstName: user.name.first,
-      lastName: user.name.last,
-      email: user.email,
-      password: user.password,
+      firstName: user?.name.first ?? '',
+      lastName: user?.name.last ?? '',
+      email: user?.email ?? '',
+      password: user?.password ?? '',
     },
   })
+
+  // Statistik asli dari measurementData (sebelumnya hardcode 72 & 67)
+  const measurements = (user?.measurementData ?? []).filter(m => typeof m.bpm === 'number' && Number.isFinite(m.bpm))
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const lastWeek = measurements.filter(m => Date.parse(m.date) >= weekAgo)
+  const avgBpm = lastWeek.length ? Math.round(lastWeek.reduce((t, m) => t + m.bpm, 0) / lastWeek.length) : null
+  const totalSessions = measurements.length
+
+  const handlePictureChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      // kecilin dulu biar gak bikin localStorage penuh
+      const img = new Image()
+      img.onload = () => {
+        const size = 256
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        const min = Math.min(img.width, img.height)
+        ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, size, size)
+        setNewPicture(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   const openEditOverlay = () => {
     reset({
       firstName: user.name.first,
       lastName: user.name.last,
       email: user.email,
-      password: user.password,
+      password: user.password ?? '',
     })
+    setNewPicture(undefined)
     clearError()
     setEditOverlay(true)
   }
 
   const closeEditOverlay = () => {
     clearError()
+    setNewPicture(undefined)
     setEditOverlay(false)
     setSavePopup(false)
   }
 
   const submitAccountEdit = (data) => {
-    if (editAccount(data.email, data.password, data.firstName, data.lastName)) {
+    if (editAccount(data.email, data.password, data.firstName, data.lastName, newPicture)) {
+      setNewPicture(undefined)
       setEditOverlay(false)
       setSavePopup(false)
     }
@@ -65,10 +103,12 @@ function Profile() {
     }
   }
 
+  if (!user) return null
+
   return (
     <div className="flex flex-col items-center h-full pt-16 gap-14">
       <div className="flex flex-col items-center gap-8">
-        <img src={user.profilePicture} alt="" className="size-48 rounded-[64px] border-[1.2px] border-th-plain-grey object-cover object-center" />
+        <img src={user.profilePicture} referrerPolicy="no-referrer" alt="" className="size-48 rounded-[64px] border-[1.2px] border-th-plain-grey object-cover object-center" />
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl/[110%] font-bold text-th-plain-black font-cabinet">{user.name.first} {user.name.last}</h1>
           <p className="text-lg/[110%] text-th-green-darker">{user.email}</p>
@@ -81,14 +121,14 @@ function Profile() {
       </div>
       <div className="grid h-full grid-cols-2 grid-rows-[1fr_cmax-content]">
         <Card className={'rounded-3xl justify-between'}>
-          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-green-darker">72</h1>
+          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-green-darker">{avgBpm ?? '-'}</h1>
           <p className="text-th-green-dark flex flex-col text-lg/[90%] font-medium gap-1">
             Average BPM
             <span className="text-xs/[90%] font-normal">Last 7 days</span>
           </p>
         </Card>
         <Card className={'rounded-3xl justify-between bg-th-cream'}>
-          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-plain-black">67</h1>
+          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-plain-black">{totalSessions}</h1>
           <p className="text-th-oak flex flex-col text-lg/[90%] font-medium gap-1">
             Measurements
             <span className="text-xs/[90%] font-normal">Total Sessions</span>
@@ -111,7 +151,8 @@ function Profile() {
             <p className="text-lg/[110%] text-th-green-dark font-medium">Are you sure you want to log out<br/>from your current account?</p>
           </div>
           <div className="flex w-full">
-            <Button onClick={() => {
+            <Button onClick={async () => {
+              await signOut(auth)
               logout()
               navigate('/welcome')
             }} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white flex-1 min-w-0'}>Logout</Button>
@@ -125,8 +166,8 @@ function Profile() {
           <Button onClick={() => setEditOverlay(false)}><i className="fi fi-rr-angle-small-left -ml-1.5 text-th-green-dark text-2xl/[80%]"></i></Button>
           <form id="edit-form" noValidate onSubmit={handleSubmit(submitAccountEdit, () => setSavePopup(false))} className="flex flex-col items-center w-full h-full gap-8">
             <span className="relative">
-              <img src={user.profilePicture} className="size-32 rounded-3xl border-[1.2px] border-th-plain-grey object-cover object-center" />
-              <input ref={profilePictureInput} type="file" accept="image/*" className="hidden" />
+              <img src={newPicture ?? user.profilePicture} referrerPolicy="no-referrer" className="size-32 rounded-3xl border-[1.2px] border-th-plain-grey object-cover object-center" />
+              <input ref={profilePictureInput} type="file" accept="image/*" onChange={handlePictureChange} className="hidden" />
               <Button type="button" onClick={() => profilePictureInput.current?.click()} className={'size-9 text-th-green-dark absolute right-0 bottom-0 translate-y-[30%] translate-x-[30%] bg-th-plain-white border-[1.2px] border-th-plain-grey justify-center rounded-2xl text-base/[80%]'}><i className="fi fi-sr-pencil"></i></Button>
             </span>
             <div className="flex flex-col w-full gap-2">
@@ -162,14 +203,16 @@ function Profile() {
               })} className={`w-full border-[1.2px] bg-th-plain-white ${errors.email ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
               {errors.email && <p className="text-xs text-th-purple-darker">{errors.email.message}</p>}
             </div>
-            <div className="flex flex-col w-full gap-2">
-              <label htmlFor="password" className={`font-medium text-xs/[110%] ${errors.password ? 'text-th-purple-darker' : 'text-th-green-dark'}`}>Password</label>
-              <input id="password" type="password" autoComplete="new-password" {...register('password', {
-                required: 'Enter your password.',
-                minLength: { value: 8, message: 'Password must be at least 8 characters.' },
-              })} className={`w-full border-[1.2px] bg-th-plain-white ${errors.password ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
-              {errors.password && <p className="text-xs text-th-purple-darker">{errors.password.message}</p>}
-            </div>
+            {user.source !== 'firebase' && (
+              <div className="flex flex-col w-full gap-2">
+                <label htmlFor="password" className={`font-medium text-xs/[110%] ${errors.password ? 'text-th-purple-darker' : 'text-th-green-dark'}`}>Password</label>
+                <input id="password" type="password" autoComplete="new-password" {...register('password', {
+                  required: 'Enter your password.',
+                  minLength: { value: 8, message: 'Password must be at least 8 characters.' },
+                })} className={`w-full border-[1.2px] bg-th-plain-white ${errors.password ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
+                {errors.password && <p className="text-xs text-th-purple-darker">{errors.password.message}</p>}
+              </div>
+            )}
             {authError && <p role="alert" className="text-xs text-th-purple-darker">{authError}</p>}
             <div className="flex w-full mt-auto">
               <Button type="button" onClick={requestSaveConfirmation} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white flex-1 min-w-0'}>Save Changes</Button>

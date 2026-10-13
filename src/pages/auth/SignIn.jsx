@@ -4,10 +4,13 @@ import Button from "../../components/atom/Button"
 import { Link, useNavigate } from "react-router"
 import googleG from '../../assets/icons/google-g.svg'
 import { useState } from "react"
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth"
+import { auth } from "../../firebase"
 
 function SignIn() {
   const navigate = useNavigate()
   const login = useSariAuthStore(state => state.login)
+  const loginWithGoogle = useSariAuthStore(state => state.loginWithGoogle)
   const [showPassword, setShowPassword] = useState(false)
   const authError = useSariAuthStore(state => state.error)
   const {register, handleSubmit, watch, formState: { errors, }} = useForm()
@@ -17,6 +20,19 @@ function SignIn() {
     setShowPassword(!showPassword);
   };
 
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+  
+    try {
+      const result = await signInWithPopup(auth, provider);
+      loginWithGoogle(result.user);
+      console.log("google log success:", result.user);
+        
+      navigate('/home');
+    } catch (err) {
+      console.error("google log failed", err.message);
+    }
+  };
   return (
     <>
     <div className="flex flex-col items-center gap-4 text-center">
@@ -55,7 +71,7 @@ function SignIn() {
     </form>
     <div className="flex gap-2">
       <Button form={'login-form'} type="submit" className="rounded-3xl text-center bg-th-green-light text-lg/[90%] font-medium text-th-plain-white py-6 px-16 justify-center'} to={'/auth/sign-in">Sign In</Button>
-      <Button className={'border-[1.2px] border-th-purple-light p-0 size-16 rounded-3xl justify-center'}>
+      <Button onClick={handleGoogleLogin} type="button" className={'border-[1.2px] border-th-purple-light p-0 size-16 rounded-3xl justify-center'}>
         <img className="size-6" src={googleG} alt="" />
       </Button>
     </div>

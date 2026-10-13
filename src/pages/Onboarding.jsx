@@ -42,7 +42,7 @@ function Onboarding() {
         </div>
         <div className="flex flex-col gap-6">
           {hiwContents.map(({title, desc, icon}) => (  
-            <Card className={'px-6 py-5 bg-th-green-light/25 rounded-3xl flex-row items-center gap-4'}>
+            <Card key={title} className={'px-6 py-5 bg-th-green-light/25 rounded-3xl flex-row items-center gap-4'}>
               <img className='rounded-3xl' src={icon} alt="" />
               <div className="space-y-2">
                 <p className='text-th-green-darker text-lg/[90%] font-medium'>{title}</p>

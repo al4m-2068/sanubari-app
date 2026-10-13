@@ -5,6 +5,8 @@ import Button from "../components/atom/Button"
 import { useState } from "react"
 import sariLogo from '../assets/icons/sanubari.svg'
 
+const EMPTY_MEASUREMENTS = []
+
 function getMeasurementDateKey(date) {
   const match = /^(\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}:\d{2}\.\d{3}Z)?$/.exec(date ?? '')
   if (!match) return null
@@ -28,7 +30,7 @@ function formatMeasurementDate(date) {
 function Home() {
   const navigate = useNavigate()
   const user = useSariAuthStore(state => state.user)
-  const mData = useSariAuthStore(state => state.user?.measurementData ?? [])
+  const mData = useSariAuthStore(state => state.user?.measurementData ?? EMPTY_MEASUREMENTS)
   const [barHeights] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * (100 - 30 + 1)) + 30))
   const validMeasurements = mData
     .map(measurement => {
@@ -61,7 +63,7 @@ function Home() {
         <Button className='flex items-center justify-center bg-white cursor-pointer rounded-2xl text-th-green-dark size-9 shrink-0'>
           <i className="fi fi-rr-bell text-base/[90%]"></i>
         </Button>
-        <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src={user.profilePicture} className="object-cover object-center size-10 rounded-2xl" alt={`${user.name} profile picture`} /></Button>
+        <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src={user.profilePicture} referrerPolicy="no-referrer" className="object-cover object-center size-10 rounded-2xl" alt={`${user.name?.first ?? ''} profile picture`} /></Button>
       </div>
     </header>
     <div className="flex flex-col gap-5 pt-4">
