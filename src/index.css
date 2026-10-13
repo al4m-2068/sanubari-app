@@ -28,3 +28,16 @@
   --color-th-oak: #8c8268;
   --blur-th: 2px;
 }
+
+@keyframes notification-pan {
+  from {
+    transform: translateX(var(--ticker-start));
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.notification-ticker {
+  animation: notification-pan 20s linear infinite;
+}

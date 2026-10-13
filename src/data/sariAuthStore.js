@@ -2,6 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import '/src/assets/images/DSC05019.JPG';
 
+function ensureNotificationIds(notifications = []) {
+  return notifications.map((notification, index) => ({
+    ...notification,
+    id: notification.id ?? `notification-${index}`,
+  }))
+}
+
 const MOCK_USERS = [
   {
     id: 1,
@@ -20,6 +27,12 @@ const MOCK_USERS = [
       { date: '2026-10-02T14:17:00.000Z', bpm: 61 },
       { date: '2026-10-01T14:15:00.000Z', bpm: 20 },
     ],
+    notifications: [
+      { id: 'daily-check-in', title: 'Daily check-in', desc: 'Your heart rate is looking stable for today.' },
+      { id: 'hydration-reminder', title: 'Hydration reminder', desc: 'Drink a glass of water to keep your energy up.' },
+      { id: 'wellness-streak-growing', title: 'Your wellness streak is growing', desc: 'You have completed 4 healthy days in a row. Keep up your daily check-ins to maintain your momentum and build healthy habits.' },
+      { id: 'wellness-streak', title: 'Wellness streak', desc: 'You have completed 4 healthy days in a row.' },
+    ]
     // chatData: [
     //   {chatId: 'almakraimfahit09837723', topic: 'Best thing to maintain after using lorem ipsum', chatContent: [
     //     {talkId: 1, question: 'What is the best thing to maintain after using lorem ipsum?', answer: {text: 'A lorem ipsum should be maintained carefully every lorem ipsum range of time.', images: null}},
@@ -41,6 +54,7 @@ export const useSariAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
+      notifications: MOCK_USERS[0]?.notifications ?? [],
       error: null,
 
       clearError: () => set({ error: null }),
@@ -53,6 +67,7 @@ export const useSariAuthStore = create(
         if (foundUser) {
           set({
             user: foundUser,
+            notifications: foundUser.notifications ?? [],
             error: null
           })
           return true
@@ -74,7 +89,7 @@ export const useSariAuthStore = create(
 
         if (!firebaseUser) {
           if (currentUser?.source === 'firebase') {
-            set({ user: null, error: null })
+            set({ user: null, notifications: MOCK_USERS[0]?.notifications ?? [], error: null })
           }
           return
         }
@@ -82,6 +97,11 @@ export const useSariAuthStore = create(
         if (currentUser?.source === 'firebase' && currentUser.id === firebaseUser.uid) {
           return
         }
+
+        const firebaseNotifications = [
+          { id: `welcome-${firebaseUser.uid}`, title: 'Welcome back', desc: 'Your wellness dashboard is ready to use.' },
+          { id: `quick-sync-${firebaseUser.uid}`, title: 'Quick sync', desc: 'Your latest health data will appear here.' },
+        ]
 
         set({
           user: {
@@ -95,7 +115,9 @@ export const useSariAuthStore = create(
             password: null,
             profilePicture: firebaseUser.photoURL,
             measurementData: [],
+            notifications: firebaseNotifications,
           },
+          notifications: firebaseNotifications,
           error: null,
         })
       },
@@ -123,12 +145,17 @@ export const useSariAuthStore = create(
           password,
           profilePicture: null,
           measurementData: [],
+          notifications: [
+            { id: 'welcome-aboard', title: 'Welcome aboard', desc: 'Your account is ready for the next wellness check.' },
+            { id: 'profile-setup', title: 'Profile setup', desc: 'Add your details and start tracking your health.' },
+          ],
         }
 
         MOCK_USERS.push(newUserTemplate)
 
         set({
           user: newUserTemplate,
+          notifications: newUserTemplate.notifications,
           error: null,
         })
 
@@ -137,6 +164,7 @@ export const useSariAuthStore = create(
 
       logout: () => set({
         user: null,
+        notifications: MOCK_USERS[0]?.notifications ?? [],
         error: null,
       }),
 
@@ -158,6 +186,7 @@ export const useSariAuthStore = create(
           email: email.trim(),
           password: currentUser.source === 'firebase' ? null : password,
           profilePicture: profilePicture !== undefined ? profilePicture : currentUser.profilePicture,
+          notifications: currentUser.notifications ?? MOCK_USERS[0]?.notifications ?? [],
         }
         
         const mockIndex = MOCK_USERS.findIndex(u => u.id === currentUser.id)
@@ -165,15 +194,44 @@ export const useSariAuthStore = create(
 
         set({
           user: updatedUser,
+          notifications: updatedUser.notifications ?? [],
           error: null,
         })
 
         return true
       },
-    }),
+      deleteNotification: (id) => {
+        const currentUser = get().user
+        if (!currentUser) return false
 
+        const notifications = (currentUser.notifications ?? []).filter(notification => notification.id !== id)
+        if (notifications.length === (currentUser.notifications ?? []).length) return false
+
+        const updatedUser = { ...currentUser, notifications }
+        const mockIndex = MOCK_USERS.findIndex(user => user.id === currentUser.id)
+        if (mockIndex !== -1) MOCK_USERS[mockIndex] = updatedUser
+
+        set({ user: updatedUser, notifications })
+        return true
+      }
+    }),
     {
       name: 'sari-auth',
+      version: 1,
+      migrate: (persistedState) => {
+        if (!persistedState) return persistedState
+
+        const userNotifications = ensureNotificationIds(persistedState.user?.notifications)
+        return {
+          ...persistedState,
+          user: persistedState.user
+            ? { ...persistedState.user, notifications: userNotifications }
+            : null,
+          notifications: persistedState.user
+            ? userNotifications
+            : ensureNotificationIds(persistedState.notifications),
+        }
+      },
     }
   )
 )

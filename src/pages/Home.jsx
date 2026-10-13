@@ -1,11 +1,13 @@
-import { Link, Navigate, useNavigate } from "react-router"
+import { Fragment } from "react"
+import { Link, useNavigate } from "react-router"
 import Card from "../components/atom/Card"
 import { useSariAuthStore } from "../data/sariAuthStore"
 import Button from "../components/atom/Button"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import sariLogo from '../assets/icons/sanubari.svg'
 
 const EMPTY_MEASUREMENTS = []
+import { Popover } from "radix-ui"
 
 function getMeasurementDateKey(date) {
   const match = /^(\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}:\d{2}\.\d{3}Z)?$/.exec(date ?? '')
@@ -27,9 +29,50 @@ function formatMeasurementDate(date) {
   return getMeasurementDateKey(date) ?? '-'
 }
 
+function NotificationTicker({ text, className = '' }) {
+  const viewportRef = useRef(null)
+  const textRef = useRef(null)
+  const [metrics, setMetrics] = useState({ overflow: false, viewportWidth: 0 })
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    const content = textRef.current
+    if (!viewport || !content) return
+
+    const measure = () => {
+      const viewportWidth = viewport.clientWidth
+      const overflow = content.scrollWidth > viewportWidth
+      setMetrics(current => current.overflow === overflow && current.viewportWidth === viewportWidth
+        ? current
+        : { overflow, viewportWidth })
+    }
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(viewport)
+    observer.observe(content)
+    measure()
+
+    return () => observer.disconnect()
+  }, [text])
+
+  return (
+    <div ref={viewportRef} className="min-w-0">
+      <p
+        ref={textRef}
+        className={`w-max whitespace-nowrap ${className} ${metrics.overflow ? 'notification-ticker' : ''}`}
+        style={metrics.overflow ? { '--ticker-start': `${metrics.viewportWidth}px` } : undefined}
+      >
+        {text}
+      </p>
+    </div>
+  )
+}
+
 function Home() {
   const navigate = useNavigate()
   const user = useSariAuthStore(state => state.user)
+  const notifications = useSariAuthStore(state => state.notifications)
+  const deleteNotification = useSariAuthStore(state => state.deleteNotification)
   const mData = useSariAuthStore(state => state.user?.measurementData ?? EMPTY_MEASUREMENTS)
   const [barHeights] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * (100 - 30 + 1)) + 30))
   const validMeasurements = mData
@@ -60,9 +103,36 @@ function Home() {
     <header className="sticky top-0 left-0 flex items-center justify-between w-full py-4 z-999">
       <img src={sariLogo} alt="SANUBARI icon" className="cursor-pointer size-10 shrink-0" onClick={() => navigate('/')}/>
       <div className="flex items-center gap-2">
-        <Button className='flex items-center justify-center bg-white cursor-pointer rounded-2xl text-th-green-dark size-9 shrink-0'>
-          <i className="fi fi-rr-bell text-base/[90%]"></i>
-        </Button>
+        <Popover.Root>
+          <Popover.Trigger asChild>
+            <Button className='flex items-center justify-center bg-white cursor-pointer rounded-2xl text-th-green-dark size-9 shrink-0'>
+              <i className="fi fi-rr-bell text-base/[90%]"></i>
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content align="end" alignOffset={-48} className="z-50 rounded-2xl bg-th-plain-white py-3 px-4 text-xs/[100%] text-th-plain-black flex flex-col gap-3 w-75 shadow-2xl shadow-th-plain-black/20">
+            {notifications.map(({id, title, desc}, index) => (
+              <Fragment key={id}>
+              <div className="flex items-center relative">
+                <div className="flex flex-col gap-1 min-w-0 flex-1 overflow-hidden py-1 pr-7">
+                  <NotificationTicker text={title} className="font-medium" />
+                  <NotificationTicker text={desc} />
+                  <div className="absolute top-0 right-0 h-full w-10 bg-linear-240 from-th-plain-white from-60% to-transparent" />
+                </div>
+                <Button
+                  type="button"
+                  aria-label={`Delete notification: ${title}`}
+                  className="absolute right-0 z-10 cursor-pointer"
+                  onClick={() => deleteNotification(id)}
+                >
+                  <i className="fi fi-tr-circle-trash text-sm/[80%]"></i>
+                </Button>
+              </div>
+              {index !== notifications.length - 1 && <hr className="border border-th-plain-grey" />}
+              </Fragment>
+            ))}
+            <Popover.Arrow className="fill-th-plain-white" height={8} width={10}/>
+          </Popover.Content>
+        </Popover.Root>
         <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src={user.profilePicture} referrerPolicy="no-referrer" className="object-cover object-center size-10 rounded-2xl" alt={`${user.name?.first ?? ''} profile picture`} /></Button>
       </div>
     </header>
