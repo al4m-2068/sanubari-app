@@ -1,0 +1,190 @@
+from dataclasses import dataclass, field
+
+
+@dataclass
+class RPPGConfig:
+
+    BUFFER_SIZE: int = 300
+    FPS_TARGET: float = 30.0
+
+    MIN_FRAMES: int = 120
+    CALIBRATION_FRAMES: int = 180
+
+    RPPG_ALGO: str = "POS"
+
+    BPM_LOW: float = 50.0
+    BPM_HIGH: float = 180.0
+
+    RESP_LOW: float = 0.10
+    RESP_HIGH: float = 0.50
+
+    SQI_HARD_GATE: float = 20.0 # Lowered from 25
+    SQI_DISPLAY_GATE: float = 25.0 # Lowered from 35
+    BASELINE_SQI_THRESHOLD: float = 35.0 # Lowered from 50
+    ARRHYTHMIA_SQI_GATE: float = 70.0
+
+    AGREEMENT_SQI_PENALTY_BELOW: float = 0.50
+    AGREEMENT_SQI_PENALTY_COEFF: float = 0.50
+
+    DYN_WEIGHT_MIN: float = 0.01 # Allow weights to go to zero
+    DYN_WEIGHT_MAX: float = 3.0
+    DYN_WEIGHT_NORM_MAX: float = 0.75
+
+    FUSION_OUTLIER_THRESHOLD: float = 8.0
+
+    REGULARITY_HARD_GATE: float = 15.0 # 0.0 survived before, now needs at least 15% regularity
+
+    FFT_DOMINANCE_STRONG: float = 0.30
+    FFT_DOMINANCE_MEDIUM: float = 0.15
+    FFT_DOMINANCE_WEAK: float = 0.08
+
+    HARMONIC_BPM_THRESHOLD: float = 130.0
+    HARMONIC_PROXIMITY_TOL: float = 5.0
+    TEMPORAL_INERTIA_ALPHA: float = 0.30
+    MAX_BPM_JUMP: float = 10.0
+
+    BPM_VELOCITY_SOFT_LIMIT: float = 3.0
+    BPM_VELOCITY_DAMP_ALPHA: float = 0.12
+
+    SESSION_CONF_WEIGHT_SQI: float = 0.40
+    SESSION_CONF_WEIGHT_AGREEMENT: float = 0.30
+    SESSION_CONF_WEIGHT_TEMPORAL: float = 0.20
+    SESSION_CONF_WEIGHT_MOTION: float = 0.10
+
+    SESSION_CONF_CONSISTENCY_WINDOW: int = 180
+    SESSION_CONF_AGREEMENT_FLOOR: float = 0.4
+
+    EXPOSURE_DRIFT_WARN: float = 20.0
+    EXPOSURE_DRIFT_FREEZE: float = 40.0
+    EXPOSURE_DRIFT_SQI_PENALTY: float = 0.35
+    EXPOSURE_DRIFT_WEIGHT_MULT: float = 0.45
+
+    SNR_KILL_THRESHOLD: float = 20.0
+    SNR_KILL_WEIGHT: float = 0.08
+
+    AGREEMENT_KILL_BELOW: float = 0.55
+    AGREEMENT_KILL_MULT: float = 0.10
+
+    AGREEMENT_STD_K: float = 7.0
+    AGREEMENT_DEV_K: float = 6.0
+
+    BPM_PLAUSIBLE_LOW: float = 45.0
+    BPM_PLAUSIBLE_HIGH: float = 130.0    # TUNED: 135→130. Manusia duduk diem jarang >130.
+    # BPM Inertia thresholds — shared antara rppg_core dan rppg_sqi
+    BPM_INERTIA_NUCLEAR: float = 30.0    # Jump > 30 BPM = almost certainly artifact
+    BPM_INERTIA_BRUTAL: float = 20.0     # Jump > 20 BPM = very suspicious
+    BPM_INERTIA_SOFT: float = 12.0       # Jump > 12 BPM = mild penalty
+
+    SINGLE_ROI_SQI_MULT: float = 1.00
+
+    HARMONIC_SUSPECT_MULT: float = 0.05
+
+    ROI_MIN_AGREEMENT_FACTOR: float = 0.20
+
+    STABLE_LOCK_SECONDS: float = 8.0
+    STABLE_LOCK_BPM_STD: float = 3.5
+    STABLE_HOLD_ALPHA: float = 0.05
+
+    ROI_BAD_STREAK_LIMIT: int = 90
+    ROI_BAD_SQI_THRESH: float = 20.0
+    ROI_REHAB_FRAMES: int = 45
+
+    FFT_WINDOW_SEC: float = 10.0
+    FFT_WINDOW_VOTE_TOL: float = 0.08
+    FFT_HISTORY_OVERRIDE: float = 0.18
+
+    ROI_TEMPORAL_SPIKE_BPM: float = 15.0
+    ROI_TEMPORAL_SPIKE_MULT: float = 2.0
+
+    MOTION_ENTER_THRESHOLD: float = 2.5
+    MOTION_EXIT_THRESHOLD: float = 1.5
+
+    BPM_HOLDOVER_SEC: float = 5.0
+    MOTION_GRACE_FRAMES: int = 20
+
+    BPM_EMA_ALPHA: float = 0.25
+    BPM_MEDIAN_WINDOW: int = 17
+    BPM_MAX_JUMP: float = 12.0
+
+    TEMPORAL_BPM_MAX_JUMP_3FRAMES: float = 8.0
+    TEMPORAL_HISTORY_LEN: int = 12
+
+    CLUSTER_DISTANCE_BPM: float = 8.0
+    MIN_CLUSTER_WEIGHT: float = 0.20
+
+    CALIBRATION_SQI_FLOOR: float = 30.0
+
+    ROI_BRIGHTNESS_MIN: float = 60.0
+    ROI_BRIGHTNESS_MAX: float = 205.0
+
+    SQI_WEIGHT_SNR:          float = 0.25
+    SQI_WEIGHT_REGULARITY:   float = 0.30
+    SQI_WEIGHT_TEMPORAL:     float = 0.30
+    SQI_WEIGHT_PEAK_CONSIST: float = 0.15
+    SQI_WEIGHT_MOTION:       float = 0.10
+    SQI_WEIGHT_VARIANCE:     float = 0.00
+    SQI_PENALTY_WEIGHT:      float = 0.40
+    SQI_MAX_MOTION_PENALTY:  float = 0.60
+    SQI_MAX_LIGHTING_PENALTY: float = 0.30
+    SQI_MAX_FFT_PENALTY:     float = 0.25
+
+    BPM_MAX_DELTA_PER_SEC: float = 10.0
+    ROI_CONSENSUS_THRESHOLD: float = 15.0
+    ROI_BRUTAL_PENALTY: float = 0.15
+    TEMPORAL_ANCHOR_TAU: float = 10.0
+    TEMPORAL_MAX_DELTA: float = 15.0
+    HARMONIC_PENALTY_MULT: float = 0.15
+    SESSION_CONF_ALPHA: float = 0.25
+    SESSION_CONF_HARD_REJECT_DECAY: float = 0.85
+    EMA_ALPHA_CINEMATIC: float = 0.25
+    HARMONIC_SNR_RATIO: float = 0.30
+    ROI_AUTO_DISABLE_SEC: int = 3
+    ROI_REG_MIN_THRESHOLD: float = 15.0
+
+    BPM_EMA_ALPHA_RESEARCH: float = 0.25
+    BAD_FREQS_BPM: tuple = (150.0,)
+    PEAK_PROMINENCE_MIN: float = 0.40
+    CONSENSUS_STD_MAX: float = 8.0
+    PEAK_DOMINANCE_RATIO_MIN: float = 2.0
+
+    PEAK_PERSISTENCE_LIMIT: int = 150 # Frames before we suspect peak locking
+    PEAK_PERSISTENCE_BPM_TOL: float = 1.0
+
+    # ── Subharmonic / Half-Frequency Lock (Petunjuk) ───────────────────────────
+    SUBHARMONIC_RATIO_LOW: float = 0.45
+    SUBHARMONIC_RATIO_HIGH: float = 0.55
+    SUBHARMONIC_PENALTY: float = 0.4
+    HARMONIC_RATIO_LOW: float = 1.8
+    HARMONIC_RATIO_HIGH: float = 2.2
+    HARMONIC_PENALTY: float = 0.3
+
+    # ── Harmonic Zombie System ─────────────────────────────────────────────────
+    # Consecutive frames at 2:1 ratio before full zombie lock
+    ZOMBIE_LOCK_FRAMES: int = 5
+    # Weight returned for confirmed zombie (bypasses DYN_WEIGHT_MIN clip)
+    ZOMBIE_WEIGHT: float = 0.0
+    # SQI multiplier for suspected zombie (streak 1-4)
+    ZOMBIE_SQI_RAMP: float = 0.25   # per streak-frame penalty factor base
+    # SQI multiplier for confirmed zombie (streak >= ZOMBIE_LOCK_FRAMES)
+    ZOMBIE_SQI_NUKE: float = 0.08
+
+    # ── Physiological BPM Prior ────────────────────────────────────────────────
+    # Applied to SQI BEFORE temporal smoothing so it can't be buried by history
+    PHYSIO_PRIOR_HIGH_BPM_THRESH: float = 130.0   # > this = suspicious
+    PHYSIO_PRIOR_HIGH_BPM_SQI_MULT: float = 0.18  # multiplier: nearly impossible resting
+    PHYSIO_PRIOR_ELEV_BPM_THRESH: float = 115.0   # > this = elevated without motion
+    PHYSIO_PRIOR_ELEV_BPM_SQI_MULT: float = 0.55  # multiplier: possible but penalized
+    PHYSIO_PRIOR_MOTION_EXEMPT: float = 1.8        # motion_score above this exempts prior
+
+    # ── Sinusoidal Purity Penalty ──────────────────────────────────────────────
+    # Real PPG is asymmetric; a too-clean sine is likely artifact
+    SINE_PURITY_THRESHOLD: float = 0.93     # |corr| above this triggers penalty
+    SINE_PURITY_BPM_MIN: float = 110.0      # Only penalize at elevated BPMs
+    SINE_PURITY_SQI_MULT: float = 0.55      # SQI multiplier for sine-pure signals
+
+    KALMAN_Q_BPM: float = 0.5
+    KALMAN_Q_VEL: float = 0.005
+    KALMAN_R_BPM: float = 20.0
+
+
+cfg = RPPGConfig()
