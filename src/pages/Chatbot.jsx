@@ -55,8 +55,8 @@ function Chatbot() {
         <div className="relative flex flex-col items-center w-full gap-5">
           {/* // QUESTION SUGGESTIONS // */}
           <div className="flex gap-1 w-full overflow-x-auto scrollbar-none fade-x fade-size-x-2xl h-48 box-content p-4 -m-4">
-            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[1])} to={`/chatbot/session`}><span className="text-xs text-th-oak">Topic Suggestions</span> Why might measurements vary?</NavLink>
-            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 shrink-0 text-lg/100 font-medium w-40 flex flex-col justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[0])} to={`/chatbot/session`}>
+            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[1])} to={`/chatbot/session`} state={{ initialQuestion: 'Why might measurements vary?' }}><span className="text-xs text-th-oak">Topic Suggestions</span> Why might measurements vary?</NavLink>
+            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 shrink-0 text-lg/100 font-medium w-40 flex flex-col justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[0])} to={`/chatbot/session`} state={{ initialQuestion: 'Compare with my recent measurements' }}>
               Compare with my recent measurements
               <div className="flex gap-2 w-full h-full items-end">
                 <div className="flex-1 bg-th-plain-white/6 h-[70%] rounded-lg"></div>
@@ -64,7 +64,7 @@ function Chatbot() {
                 <div className="flex-1 bg-th-plain-white/6 h-[90%] rounded-lg"></div>
               </div>
             </NavLink>
-            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[2])} to={`/chatbot/session`}><span className="text-xs text-th-plain-black/30">Topic Suggestions</span> How does rPPG work?</NavLink>
+            <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[2])} to={`/chatbot/session`} state={{ initialQuestion: 'How does rPPG work?' }}><span className="text-xs text-th-plain-black/30">Topic Suggestions</span> How does rPPG work?</NavLink>
           </div>
           <div className="flex flex-col text-xs min-h-25 max-h-40 bg-white border-[1.2px] border-th-plain-grey p-4 rounded-2xl w-full gap-2 has-focus:outline-2 outline-th-green-dark">
             <textarea
@@ -97,7 +97,7 @@ export default Chatbot
 export function ChatPage() {
   const userProfile = useSariAuthStore(state => state.user.profilePicture)
   const location = useLocation()
-  const initialQuestion = location.state?.initialQuestion || "Halo!"
+  const initialQuestion = location.state?.initialQuestion
   
   const [messages, setMessages] = useState([])
   const [question, setQuestion] = useState('')
@@ -147,8 +147,8 @@ export function ChatPage() {
         ))}
 
         {loading && (
-          <div className="flex text-xs italic text-th-plain-grey">
-            Sanubari AI sedang berpikir...
+          <div className="flex text-xs/[90%] italic text-th-green-dark">
+            SARI is thinking...
           </div>
         )}
         {/* <div className="min-h-[200vh] bg-amber-300 " /> */}
