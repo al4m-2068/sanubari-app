@@ -7,28 +7,22 @@ import { Link } from "react-router"
 import Drawer from "../components/Drawer"
 
 const requirementsClass = {
-  check: 'text-th-plain-white bg-th-green-dark',
-  onStage: 'text-th-green-dark',
-  uncheck: 'text-th-plain-grey'
+  check: 'bg-th-green-dark',
+  onStage: 'bg-th-purple-light',
+  uncheck: 'bg-th-plain-white'
 }
 const stageTexts = {
   face: {
-    icon: 'fi fi-rr-qr-scan',
     p: 'Stay in the designated area!',
-    h1: 'Keep a steady face in the area',
+    h1: 'Keep your face inside the frame',
   },
   movement: {
-    icon: 'fi fi-rr-laugh',
     p: 'Stay still, don’t move!',
     h1: 'Don’t make any sudden movement!',
   },
   light: {
-    icon: 'fi fi-rr-bulb',
     p: 'Keep enough lighting!',
-    h1: 'Make sure your face is visible under light',
-  },
-  finished: {
-    p: 'Ready and set!',
+    h1: 'Ensure your face is visible under light',
   },
 }
 
@@ -66,7 +60,9 @@ function Camera() {
     if (stage === 'finished' || stage === 'measuring' || stage === 'result') return
     const camStageTimeout = setTimeout(() => {
       setStageCompleted(prev => ({...prev, [stage]: true}))
-      setStage(prev => prev === 'face' ? 'movement' : prev === 'movement' ? 'light' : 'finished')
+      setTimeout(() => {
+        setStage(prev => prev === 'face' ? 'movement' : prev === 'movement' ? 'light' : 'finished')
+      }, 1000)
     }, 1000)
 
     return () => clearTimeout(camStageTimeout)
@@ -90,13 +86,13 @@ function Camera() {
   }, [stage, resultStat])
 
   return (
-    <div className={`flex flex-col items-center h-full pt-16 ${stage === 'measuring' ? 'gap-0' : stage === 'result' ? 'gap-12' : 'gap-7'}`}>
+    <div className={`flex flex-col items-center h-full pb-33 ${stage === 'measuring' ? 'gap-0' : stage === 'result' ? 'gap-12 overflow-y-auto scrollbar-none' : 'gap-7'}`}>
       {/* DIV for START OVERLAY */}
       {!start &&
         <div className="flex flex-col items-center justify-center w-full h-full gap-3 px-6 text-center">
           <p className="text-lg/[110%] text-th-green-dark">Start Measuring!</p>
           <h1 className="text-4xl/[110%] font-medium text-th-green-darker font-cabinet">Do a quick<br/>measurement!</h1>
-          <Button className={'mt-10 h-23 border-4 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
+          <Button className={'mt-10 h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
             setStart(true)
             setStage('face')
           }}>Start</Button>
@@ -107,36 +103,40 @@ function Camera() {
         <>
         {/* DIV for CAMERA [BACKEND] */}
         {stage !== 'result' && (
-          <div id="camContainer" onMouseMove={handleMoveTooMuch} style={{ width: '100%', height: '420px' }} className={`bg-[url('https://m.media-amazon.com/images/I/71+NJH3rphL._AC_UF1000,1000_QL80_.jpg')] bg-cover bg-center rounded-3xl shrink-0 items-center justify-center flex relative ${!notMeasureStages && 'rounded-b-none'}`}>
+          <div id="camContainer" onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-[url('https://m.media-amazon.com/images/I/71+NJH3rphL._AC_UF1000,1000_QL80_.jpg')] bg-cover bg-center shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
+            {/* // CAMERA OVERLAY // */}
+            <div className="absolute w-full h-full top-0 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs" />
             {/* CAMERA */}
             {stage === 'face' ? (
               <img src={faceGuide} alt="" />
             ) : stage === 'measuring' ? (
-              <div className="absolute bottom-0 flex w-full h-2"><div className="flex h-2 transition-all duration-200 bg-th-green-dark" style={{ width: `${resultStat}%` }}></div></div>
+              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
             ) : ''}
+            {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
+              <div className="flex items-center w-full px-8 py-4 gap-2 absolute bottom-0 ">
+                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('face')])} />
+                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('movement')])} />
+                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('light')])} />
+              </div>
+            )}
           </div>
         )}
 
         {/* DIV for PREP ICONS [stageTexts.stage?.icon] */}
         {notMeasureStages && (
           <div className="flex flex-col items-center w-full h-full gap-7">
-            {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
-              <div className="flex items-center">
-                <p className={twMerge('size-12 flex items-center justify-center text-2xl/[80%] font-medium rounded-2xl', requirementsClass[getStageClass('face')])}><i className={`fi ${stageTexts['face'].icon}`}></i></p>
-                <p className={twMerge('size-12 flex items-center justify-center text-2xl/[80%] font-medium rounded-2xl', requirementsClass[getStageClass('movement')])}><i className={`fi ${stageTexts['movement'].icon}`}></i></p>
-                <p className={twMerge('size-12 flex items-center justify-center text-2xl/[80%] font-medium rounded-2xl', requirementsClass[getStageClass('light')])}><i className={`fi ${stageTexts['light'].icon}`}></i></p>
-              </div>
-            )}
             {/* DIV for PREP INFO [stageTexts] */}
-            <div className={`flex flex-col items-center w-full gap-2 text-th-plain-grey text-center ${stage === 'finished' ? 'px-11' : stage === 'light' ? 'px-7' : 'px-9'}`}>
-              {notMeasureStages && stageTexts[stage] && <p className={`text-lg/[110%] ${stage === 'finished' && 'text-th-green-dark'}`}>{stageTexts[stage].p}</p>}
+            <div className={`flex flex-col items-center justify-center h-full w-full gap-2 text-th-plain-grey text-center px-6.5`}>
               {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
                 <>
-                <h1 className="text-4xl/[110%] font-medium font-cabinet">{stageTexts[stage].h1}</h1>
+                <h1 className={`text-4xl/[110%] font-medium font-cabinet ${stageCompleted[stage] && 'text-th-green-dark'}`}>{stageTexts[stage].h1}</h1>
                 </>
               )}
+              {notMeasureStages && stageTexts[stage] && stage !== 'finished' &&
+                <p className={`text-lg/[110%] ${stage === 'finished' && 'text-th-green-dark'}`}>{stageTexts[stage].p}</p>
+              }
               {stage === 'finished' && stageCompleted && notMeasureStages && (
-                <Button className={'mt-6 h-23 border-4 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
+                <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
                   setStage('measuring')
                 }}>Start Measuring!</Button>
               )}
@@ -146,7 +146,7 @@ function Camera() {
 
         {/* CARD for MEASUREMENT INFO [BACKEND] */}
         {stage === 'measuring' && (
-          <Card className={'h-full w-full rounded-t-none'}>
+          <Card className={'mt-2 h-full w-full rounded-t-none bg-transparent'}>
             <div className="flex justify-between">
               <p className="flex flex-col text-xs/[90%] gap-1 font-medium">
                 Stay Still!
@@ -199,7 +199,7 @@ function Camera() {
         {/* DIV for RESULT [BACKEND] */}
         {stage === 'result' && (
           <>
-            <div className="flex flex-col items-center justify-center gap-2 text-center text-th-plain-black w-49">
+            <div className="flex flex-col items-center justify-center gap-2 text-center text-th-plain-black w-49 mt-23">
               <h1 className="text-4xl/[110%] font-bold text-th-green-darker font-cabinet">Well Done!</h1>
               <p className="text-xs/[110%]">your heart rate is within a healthy range, with an average of</p>
             </div>
@@ -235,7 +235,7 @@ function Camera() {
                 </div>
                 <div className="flex flex-col items-start gap-3 p-4 flex-2">
                   <p className="font-medium text-xs/[110%] text-th-plain-white">Your heart rate is within a healthy range! want to see how it compares with your past measurements?</p>
-                  <Link to={'/chatbot/session'} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white px-4 py-3 rounded-2xl text-xs/[100%] text-th-plain-black'}>Ask SARI Chatbot</Link>
+                  <Link to={'/chatbot'} className={'border-[1.2px] border-th-plain-grey bg-white px-4 py-3 rounded-2xl text-xs/100 text-th-plain-black'}>Ask SARI Chatbot</Link>
                 </div>
               </Card>
             </div>
@@ -244,7 +244,7 @@ function Camera() {
               setStage('')
               setResultStat(0)
               setStageCompleted(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])))
-            }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Back to Dashboard</Link>
+            }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white shrink-0'}>Back to Dashboard</Link>
           </>
         )}
         </>

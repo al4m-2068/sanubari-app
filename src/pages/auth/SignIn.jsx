@@ -55,7 +55,7 @@ function SignIn() {
               message: 'Enter a valid email!'
             },
             required: 'Enter your email!',
-          })} className={`w-full border-[1.2px] ${errors.email ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} />
+          })} className={`w-full border-[1.2px] ${errors.email ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} />
         </span>
         {errors.email && <p className="-mt-1 text-xs text-th-purple-darker">{errors.email.message}</p>}
         <span className={`flex items-center relative ${errors.email ? 'text-th-purple-darker' : 'text-th-plain-black'}`}>
@@ -63,7 +63,7 @@ function SignIn() {
           <i className={`fi ${showPassword ? 'fi-rr-eye-crossed' : 'fi-rr-eye'} absolute right-4 text-base/[80%]`} onClick={handleShowPassword}></i>
           <input id="password" name="password" placeholder="••••••••" autoComplete="current-password" type={showPassword ? 'text' : 'password'} {...register('password', {
             required: 'Enter your password!',
-          })} className={`w-full border-[1.2px] ${errors.password ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
+          })} className={`w-full border-[1.2px] ${errors.password ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
         </span>
         {errors.password && <p className="-mt-1 text-xs text-th-purple-darker">{errors.password.message}</p>}
         <p className="font-medium text-th-green-dark text-xs/[110%]">Forgot password?</p>

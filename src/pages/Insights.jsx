@@ -144,10 +144,10 @@ function getYearlyTrend(measurements) {
 
 function Insights() {
   return (
-    <div className="flex flex-col items-center gap-5 pt-16">
-      <div className="flex bg-th-plain-white rounded-2xl text-th-green-dark p-0.5 sticky top-4">
-        <NavLink className={({ isActive }) => (`flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/overview'}>Overview</NavLink>
-        <NavLink className={({ isActive }) => (`flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/history'}>History</NavLink>
+    <div className="flex flex-col items-center gap-5 pt-16 pb-27">
+      <div className="flex bg-white rounded-2xl text-th-green-dark p-0.5 sticky top-4">
+        <NavLink className={({ isActive }) => (`transition-all duration-500 flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/overview'}>Overview</NavLink>
+        <NavLink className={({ isActive }) => (`transition-all duration-500 flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/history'}>History</NavLink>
       </div>
       <div className="flex flex-col w-full">
         <Outlet/>
@@ -200,8 +200,8 @@ export function Overview() {
             <img src={overviewStatus == 'Great!' ? "/src/assets/images/heart-small.svg" : "/src/assets/images/heart-small-poor.svg"} alt="heart-icon" className='absolute h-auto max-w-none w-19 -bottom-8' />
           </Card>
         </Card>
-        <Card className={'h-64 flex flex-col gap-9 w-full'}>
-          <p className="flex justify-between items-center text-lg/[110%] font-medium">7 Day Trend<NavLink className="text-xs font-normal font-general text-th-green-dark" to={'/insights/history/weekly'}>See More</NavLink></p>
+        <Card className={'h-64 flex flex-col gap-9 w-full bg-th-cream'}>
+          <p className="flex justify-between items-center text-lg/[110%] font-medium">7 Day Trend<NavLink className="text-xs font-normal font-general text-th-oak" to={'/insights/history/weekly'}>See More</NavLink></p>
           <div className="flex text-xs/[110%] font-normal gap-2 h-full">
             {weeklyTrend.length
               ? weeklyTrend.map(({ dateKey, bpm, day }) => (
@@ -228,9 +228,9 @@ export function History() {
     <div className="flex flex-col items-center w-full gap-5 pt-8">
       {/* DIV of NAVIGATION */}
       <div className="flex border-th-green-light/20 rounded-full border-[1.2px] p-1">
-        <NavLink to={'/insights/history/weekly'} className={({ isActive }) => `size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-th-plain-white' : 'text-th-green-light'}`}>W</NavLink>
-        <NavLink to={'/insights/history/monthly'} className={({ isActive }) => `size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-th-plain-white' : 'text-th-green-light'}`}>M</NavLink>
-        <NavLink to={'/insights/history/yearly'} className={({ isActive }) => `size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-th-plain-white' : 'text-th-green-light'}`}>Y</NavLink>
+        <NavLink to={'/insights/history/weekly'} className={({ isActive }) => `transition-all duration-500 size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-white' : 'text-th-green-light'}`}>W</NavLink>
+        <NavLink to={'/insights/history/monthly'} className={({ isActive }) => `transition-all duration-500 size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-white' : 'text-th-green-light'}`}>M</NavLink>
+        <NavLink to={'/insights/history/yearly'} className={({ isActive }) => `transition-all duration-500 size-12 flex items-center justify-center border-[1.2px] text-lg font-medium rounded-full ${isActive ? 'border-th-plain-grey text-th-plain-black bg-white' : 'text-th-green-light'}`}>Y</NavLink>
       </div>
       {/* DIV of CONTENT */}
       <div className="flex flex-col w-full px-3">
@@ -303,7 +303,7 @@ export function Weekly() {
                     side="top"
                     align="center"
                     sideOffset={-12}
-                    className="z-50 rounded-2xl bg-th-plain-white p-3 text-xs/[90%] font-medium text-th-plain-black"
+                    className="z-50 rounded-2xl bg-white p-3 text-xs/[90%] font-medium text-th-plain-black"
                   >
                     <p>{formatTrendDate(dateKey)}</p>
                     <Popover.Arrow className="fill-th-plain-white" height={14} width={16}/>
@@ -405,7 +405,7 @@ export function Monthly() {
                     side="top"
                     align="center"
                     sideOffset={-12}
-                    className="z-50 rounded-2xl bg-th-plain-white p-3 text-xs/[90%] font-medium text-th-plain-black"
+                    className="z-50 rounded-2xl bg-white p-3 text-xs/[90%] font-medium text-th-plain-black"
                   >
                     <p>{formatTrendDate(dateKey)}</p>
                     <Popover.Arrow className="fill-th-plain-white" height={14} width={16}/>
@@ -500,7 +500,7 @@ export function Yearly() {
                     side="top"
                     align="center"
                     sideOffset={-12}
-                    className="z-50 rounded-2xl bg-th-plain-white p-3 text-xs/[90%] font-medium text-th-plain-black"
+                    className="z-50 rounded-2xl bg-white p-3 text-xs/[90%] font-medium text-th-plain-black"
                   >
                     <p>{formatTrendMonth(dateKey)}</p>
                     <Popover.Arrow className="fill-th-plain-white" height={14} width={16}/>

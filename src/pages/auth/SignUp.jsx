@@ -42,7 +42,7 @@ function SignUp() {
                 value: /^[\p{L}\s.'-]+$/u,
                 message: "Name can only contain letters, spaces, hyphens, and apostrophes",
               },
-            })} className={`w-full border-[1.2px] border-r-[0.6px] rounded-r-none ${errors.firstName ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} placeholder="First name"/>
+            })} className={`w-full border-[1.2px] border-r-[0.6px] rounded-r-none ${errors.firstName ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} placeholder="First name"/>
           </span>
 
           <span className="relative">
@@ -53,7 +53,7 @@ function SignUp() {
                 value: /^[\p{L}\s.'-]+$/u,
                 message: "Name can only contain letters, spaces, hyphens, and apostrophes",
               },
-            })} className={`w-full rounded-l-none border-[1.2px] border-l-[0.6px] ${errors.lastName ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl py-4 px-4 text-xs`} placeholder="Last name"/>
+            })} className={`w-full rounded-l-none border-[1.2px] border-l-[0.6px] ${errors.lastName ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl py-4 px-4 text-xs`} placeholder="Last name"/>
           </span>
 
           {errors.firstName && <p className="-mt-1 text-xs text-th-purple-darker">{errors.firstName.message}</p>}
@@ -68,7 +68,7 @@ function SignUp() {
               message: 'Enter a valid email!'
             },
             required: 'Enter your email!',
-          })} className={`w-full border-[1.2px] ${errors.email ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} />
+          })} className={`w-full border-[1.2px] ${errors.email ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 pr-4 text-xs`} />
         </span>
         {errors.email && <p className="-mt-1 text-xs text-th-purple-darker">{errors.email.message}</p>}
 
@@ -81,7 +81,7 @@ function SignUp() {
               message: 'Password must contain at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character.'
             },
             required: 'Enter your password!',
-          })} className={`w-full border-[1.2px] ${errors.password ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
+          })} className={`w-full border-[1.2px] ${errors.password ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
         </span>
         {errors.password && <p className="-mt-1 text-xs text-th-purple-darker">{errors.password.message}</p>}
         
@@ -91,7 +91,7 @@ function SignUp() {
           <input id="confirmPassword" name="confirmPassword" placeholder="Confirm password" type={showPassword ? 'text' : 'password'} {...register('confirmPassword', {
             validate: (value, formValues) => value === formValues.password || 'Passwords do not match.',
             required: 'Confirm your password!',
-          })} className={`w-full border-[1.2px] ${errors.confirmPassword ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-th-plain-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
+          })} className={`w-full border-[1.2px] ${errors.confirmPassword ? 'bg-th-purple-light/25 border-th-purple-dark text-th-purple-darker' : 'bg-white border-th-plain-grey'} rounded-2xl pl-12 py-4 px-4 text-xs`} />
         </span>
         {errors.confirmPassword && <p className="-mt-1 text-xs text-th-purple-darker">{errors.confirmPassword.message}</p>}
       </fieldset>

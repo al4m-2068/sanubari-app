@@ -8,6 +8,8 @@ import Drawer from "../components/Drawer"
 import Accordion from "../components/Accordion"
 import { signOut } from "firebase/auth"
 import { auth } from "../firebase"
+import sariLogo from '../assets/icons/sanubari.svg'
+import homeFooter from '../assets/images/home-footer.svg'
 
 
 
@@ -46,6 +48,17 @@ function Profile() {
   const lastWeek = measurements.filter(m => Date.parse(m.date) >= weekAgo)
   const avgBpm = lastWeek.length ? Math.round(lastWeek.reduce((t, m) => t + m.bpm, 0) / lastWeek.length) : null
   const totalSessions = measurements.length
+  const latestMeasurement = measurements
+    .map((measurement) => ({
+      ...measurement,
+      timestamp: typeof measurement.date === 'string' ? Date.parse(measurement.date) : Number.NaN,
+    }))
+    .filter((measurement) => Number.isFinite(measurement.timestamp))
+    .sort((a, b) => b.timestamp - a.timestamp)[0] ?? null
+  const latestBpm = latestMeasurement?.bpm ?? null
+  const heartRateStatus = latestBpm === null
+    ? 'No data'
+    : (latestBpm > 100 || latestBpm < 30) ? 'Unstable' : 'Stable'
 
   const handlePictureChange = (e) => {
     const file = e.target.files?.[0]
@@ -106,41 +119,47 @@ function Profile() {
   if (!user) return null
 
   return (
-    <div className="flex flex-col items-center h-full pt-16 gap-14">
+    <div className="flex flex-col items-center h-full pt-16 gap-6 overflow-y-auto scrollbar-none pb-30">
       <div className="flex flex-col items-center gap-8">
         <img src={user.profilePicture} referrerPolicy="no-referrer" alt="" className="size-48 rounded-[64px] border-[1.2px] border-th-plain-grey object-cover object-center" />
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl/[110%] font-bold text-th-plain-black font-cabinet">{user.name.first} {user.name.last}</h1>
           <p className="text-lg/[110%] text-th-green-darker">{user.email}</p>
         </div>
-        <div className="flex">
-          <Button onClick={openEditOverlay} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white px-4 h-9 rounded-2xl text-xs/[100%] text-th-plain-black'}>Edit Profile</Button>
-          <Button onClick={() => setSupportOverlay(true)} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white size-9 rounded-2xl justify-center text-xs/[80%] text-th-plain-black'}><i className="fi fi-rr-question"></i></Button>
-          <Button onClick={() => setLogoutPopup(true)} className={'border-[1.2px] border-th-plain-grey bg-th-plain-white size-9 rounded-2xl justify-center text-xs/[80%] text-th-plain-black'}><i className="fi fi-rr-leave"></i></Button>
+      </div>
+      <div className="text-center z-2 flex gap-11 items-end mt-5">
+        <div className="flex flex-col items-center gap-1">
+          <i className="fi fi-sr-flame text-2xl/[80%] text-th-green-dark mb-1" />
+          <p className="text-lg/[110%] font-medium text-th-green-darker">{totalSessions ?? '-'}x</p>
+          <p className="text-th-plain-grey text-xs/[110%] font-medium">Measured</p>
+        </div>
+        <div className="flex flex-col items-center gap-1 pb-4">
+          <i className="fi fi-sr-heart text-2xl/[80%] text-th-purple-light mb-1" />
+          <p className="text-lg/[110%] font-medium text-th-green-darker">{avgBpm ?? '-'} bpm</p>
+          <p className="text-th-plain-grey text-xs/[110%] font-medium">Average</p>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <i className="fi fi-sr-stethoscope text-2xl/[80%] text-th-oak mb-1" />
+          <p className={`text-lg/[110%] font-medium text-th-green-darker`}>{heartRateStatus}</p>
+          <p className="text-th-plain-grey text-xs/[110%] font-medium">Condition</p>
         </div>
       </div>
-      <div className="grid h-full grid-cols-2 grid-rows-[1fr_cmax-content]">
-        <Card className={'rounded-3xl justify-between'}>
-          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-green-darker">{avgBpm ?? '-'}</h1>
-          <p className="text-th-green-dark flex flex-col text-lg/[90%] font-medium gap-1">
-            Average BPM
-            <span className="text-xs/[90%] font-normal">Last 7 days</span>
-          </p>
+      <div className="h-full w-full flex flex-col z-2 gap-7">
+        <Card className="text-xs/100 text-th-plain-black w-full p-0 border-[1.2px] border-th-plain-grey">
+          <Button onClick={openEditOverlay} className={'p-6 gap-6 w-full items-center'}><i className="fi fi-rr-user text-base/[80%]"/>Personal Information<i className="fi fi-rr-angle-right text-[8px]/[80%] ml-auto" /></Button>
+          <Button onClick={() => setSupportOverlay(true)} className={'p-6 gap-6 w-full items-center'}><i className="fi fi-rr-question text-base/[80%]"/>Help & Support<i className="fi fi-rr-angle-right text-[8px]/[80%] ml-auto" /></Button>
+          <Button onClick={() => setLogoutPopup(true)} className={'p-6 gap-6 w-full items-center'}><i className="fi fi-rr-leave text-base/[80%]"/>Log Out<i className="fi fi-rr-angle-right text-[8px]/[80%] ml-auto" /></Button>
         </Card>
-        <Card className={'rounded-3xl justify-between bg-th-cream'}>
-          <h1 className="text-8xl/[90%] font-black font-cabinet text-th-plain-black">{totalSessions}</h1>
-          <p className="text-th-oak flex flex-col text-lg/[90%] font-medium gap-1">
-            Measurements
-            <span className="text-xs/[90%] font-normal">Total Sessions</span>
-          </p>
-        </Card>
-        <div className="col-span-2 p-2">
-          <Card className={'rounded-3xl text-center bg-th-green-light text-xs/[130%] font-medium text-th-plain-white p-6'}>
-            <p className="-my-1">Designated for personal wellness insights, not a replacement for professional medical device.</p>
-          </Card>
-        </div>
+        <p className="col-span-2 text-center text-xs/[130%]  text-th-plain-white">
+          Designated for personal wellness insights, not a<br/>replacement for professional medical device
+        </p>
       </div>
-
+      <div className="flex flex-col w-full absolute bottom-0">
+        <div className="relative flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
+          <img src={homeFooter} alt="SANUBARI Logo" className="inline-block scale-110" />
+        </div>
+        <div className="h-52 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
+      </div>
       {logoutPopup && (
         <Drawer onClose={() => {
           setLogoutPopup(false)
@@ -156,7 +175,7 @@ function Profile() {
               logout()
               navigate('/welcome')
             }} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white flex-1 min-w-0'}>Logout</Button>
-            <Button onClick={() => setLogoutPopup(false)} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-plain-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Cancel</Button>
+            <Button onClick={() => setLogoutPopup(false)} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Cancel</Button>
           </div>
         </Drawer>
       )}
@@ -168,7 +187,7 @@ function Profile() {
             <span className="relative">
               <img src={newPicture ?? user.profilePicture} referrerPolicy="no-referrer" className="size-32 rounded-3xl border-[1.2px] border-th-plain-grey object-cover object-center" />
               <input ref={profilePictureInput} type="file" accept="image/*" onChange={handlePictureChange} className="hidden" />
-              <Button type="button" onClick={() => profilePictureInput.current?.click()} className={'size-9 text-th-green-dark absolute right-0 bottom-0 translate-y-[30%] translate-x-[30%] bg-th-plain-white border-[1.2px] border-th-plain-grey justify-center rounded-2xl text-base/[80%]'}><i className="fi fi-sr-pencil"></i></Button>
+              <Button type="button" onClick={() => profilePictureInput.current?.click()} className={'size-9 text-th-green-dark absolute right-0 bottom-0 translate-y-[30%] translate-x-[30%] bg-white border-[1.2px] border-th-plain-grey justify-center rounded-2xl text-base/[80%]'}><i className="fi fi-sr-pencil"></i></Button>
             </span>
             <div className="flex flex-col w-full gap-2">
               <label htmlFor="firstName" className={`font-medium text-xs/[110%] ${errors.firstName || errors.lastName ? 'text-th-purple-darker' : 'text-th-green-dark'}`}>Full Name</label>
@@ -180,7 +199,7 @@ function Profile() {
                     value: /^[\p{L}\s.'-]+$/u,
                     message: 'Use letters, spaces, periods, apostrophes, or hyphens.',
                   },
-                })} className={`w-full border-[1.2px] border-r-[0.6px] rounded-r-none bg-th-plain-white ${errors.firstName ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
+                })} className={`w-full border-[1.2px] border-r-[0.6px] rounded-r-none bg-white ${errors.firstName ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
                 <input id="lastName" type="text" {...register('lastName', {
                   required: 'Enter your last name.',
                   validate: value => value.trim().length > 0 || 'Enter your last name.',
@@ -188,7 +207,7 @@ function Profile() {
                     value: /^[\p{L}\s.'-]+$/u,
                     message: 'Use letters, spaces, periods, apostrophes, or hyphens.',
                   },
-                })} className={`w-full border-[1.2px] border-l-[0.6px] rounded-l-none bg-th-plain-white ${errors.lastName ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
+                })} className={`w-full border-[1.2px] border-l-[0.6px] rounded-l-none bg-white ${errors.lastName ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
               </div>
               {(errors.firstName || errors.lastName) && <p className="text-xs text-th-purple-darker">{errors.firstName?.message || errors.lastName?.message}</p>}
             </div>
@@ -200,7 +219,7 @@ function Profile() {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                   message: 'Enter a valid email address.',
                 },
-              })} className={`w-full border-[1.2px] bg-th-plain-white ${errors.email ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
+              })} className={`w-full border-[1.2px] bg-white ${errors.email ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
               {errors.email && <p className="text-xs text-th-purple-darker">{errors.email.message}</p>}
             </div>
             {user.source !== 'firebase' && (
@@ -209,14 +228,14 @@ function Profile() {
                 <input id="password" type="password" autoComplete="new-password" {...register('password', {
                   required: 'Enter your password.',
                   minLength: { value: 8, message: 'Password must be at least 8 characters.' },
-                })} className={`w-full border-[1.2px] bg-th-plain-white ${errors.password ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
+                })} className={`w-full border-[1.2px] bg-white ${errors.password ? 'border-th-purple-dark text-th-purple-darker' : 'border-th-plain-grey'} rounded-2xl p-4 text-xs`} />
                 {errors.password && <p className="text-xs text-th-purple-darker">{errors.password.message}</p>}
               </div>
             )}
             {authError && <p role="alert" className="text-xs text-th-purple-darker">{authError}</p>}
             <div className="flex w-full mt-auto">
               <Button type="button" onClick={requestSaveConfirmation} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white flex-1 min-w-0'}>Save Changes</Button>
-              <Button type="button" onClick={closeEditOverlay} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-plain-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Cancel</Button>
+              <Button type="button" onClick={closeEditOverlay} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Cancel</Button>
             </div>
           </form>
           {/* DIV for SAVE POPUP */}
@@ -231,7 +250,7 @@ function Profile() {
               </div>
               <div className="flex w-full">
                 <Button type="submit" form={'edit-form'} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white flex-1 min-w-0'}>Confirm</Button>
-                <Button onClick={closeEditOverlay} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-th-plain-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Discard</Button>
+                <Button onClick={closeEditOverlay} className={'text-xs/[90%] font-medium w-full h-12 flex justify-center items-center bg-white rounded-2xl text-th-green-darker flex-1 min-w-0'}>Discard</Button>
               </div>
             </Drawer>
           )}

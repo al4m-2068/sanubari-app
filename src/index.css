@@ -1,5 +1,6 @@
 @import url(../node_modules/@flaticon/flaticon-uicons/css/all/all.css);
 @import 'tailwindcss';
+@import 'tw-fade';
 
 @font-face {
   font-family: 'Cabinet Grotesk';
@@ -27,6 +28,9 @@
   --color-th-moss: #a4b0a3;
   --color-th-oak: #8c8268;
   --blur-th: 2px;
+  --animate-beat: beat 0.86s ease-in-out infinite;
+  --shadow-th-sm: 0px 4px 10.9px 0;
+  --leading-100: 100%;
 }
 
 @keyframes notification-pan {
@@ -35,6 +39,14 @@
   }
   to {
     transform: translateX(-100%);
+  }
+}
+@keyframes beat {
+  0%, 100% {
+    scale: 1;
+  }
+  40%, 60% {
+    scale: 1.07;
   }
 }
 

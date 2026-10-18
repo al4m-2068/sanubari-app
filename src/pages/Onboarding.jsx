@@ -20,18 +20,18 @@ function Onboarding() {
   const [stage, setStage] = useState(null)
 
   return (
-    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative overflow-hidden ${stage === 'howitworks' ? 'justify-between' : 'gap-8'}`}>
+    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative overflow-hidden justify-between`}>
       {!stage && (
         <>
         <div className="flex flex-col gap-6 items-start z-2">
           <div className="flex flex-col gap-4">
-            <p className="text-lg/[110%] text-th-green-dark">Get Started!</p>
+            <p className="text-lg/[110%] text-th-green-dark">Welcome!</p>
             <h1 className="text-4xl/[110%] font-medium text-th-plain-black font-cabinet"><b>Your Heart Rate,</b><br/>Just a camera away.</h1>
           </div>
           <p className='text-lg/[130%]'>SANUBARI uses rPPG technology to measure your heart rate through your phone’s camera - safely, quickly and easily.</p>
-          <Button onClick={() => setStage('howitworks')} className={'mt-2 rounded-3xl text-center bg-th-green-light text-lg/[90%] font-medium text-th-plain-white py-6 px-16'}>Continue</Button>
         </div>
-        <img src={enterIllust} alt="" className='w-full h-auto scale-160 absolute bottom-3 -translate-x-5' />
+        <img src={enterIllust} alt="" className='w-full h-auto origin-bottom scale-140 absolute bottom-3 mask-b-to-75 mask-b-from-65 -translate-y-25' />
+        <Button onClick={() => setStage('howitworks')} className={'rounded-3xl text-center bg-th-green-light text-lg/[90%] justify-center font-medium text-th-plain-white py-6 px-16'}>Get Started</Button>
         </>
       )}
       {stage === 'howitworks' && (
