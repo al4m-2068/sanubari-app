@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { twMerge } from "tailwind-merge"
 import Button from "../components/atom/Button"
 import faceGuide from "/src/assets/images/face-guideline.svg"
@@ -41,6 +41,7 @@ function Camera() {
   const perMs = /* 30000 */ 100
   const [moveTooMuch, setMoveTooMuch] = useState(false)
   const overviewStatus = 'Great'
+  const videoRef = useRef(null)
 
   function handleMoveTooMuch(e) {
     if (stage !== 'measuring') return
@@ -57,17 +58,27 @@ function Camera() {
   }
 
   useEffect(() => {
-    if (stage === 'finished' || stage === 'measuring' || stage === 'result') return
-    const camStageTimeout = setTimeout(() => {
-      setStageCompleted(prev => ({...prev, [stage]: true}))
-      setTimeout(() => {
-        setStage(prev => prev === 'face' ? 'movement' : prev === 'movement' ? 'light' : 'finished')
-      }, 1000)
-    }, 1000)
-
-    return () => clearTimeout(camStageTimeout)
-  }, [stage])
-
+    let stream = null
+    if (start) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        .then((s) => {
+          stream = s
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream
+          }
+        })
+        .catch((err) => {
+          console.error("Gagal mengakses kamera:", err)
+        })
+    }
+  
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [start])
+  
   useEffect(() => {
     if (stage !== 'measuring') return
     if (resultStat === 100) {
@@ -101,19 +112,24 @@ function Camera() {
 
       {start && (
         <>
-        {/* DIV for CAMERA [BACKEND] */}
         {stage !== 'result' && (
-          <div id="camContainer" onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-[url('https://m.media-amazon.com/images/I/71+NJH3rphL._AC_UF1000,1000_QL80_.jpg')] bg-cover bg-center shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
-            {/* // CAMERA OVERLAY // */}
-            <div className="absolute w-full h-full top-0 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs" />
-            {/* CAMERA */}
+          <div id="camContainer" onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-black shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover -scale-x-100"
+            />
+            <div className="absolute w-full h-full top-0 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
             {stage === 'face' ? (
-              <img src={faceGuide} alt="" />
+              <img src={faceGuide} alt="" className="z-10 pointer-events-none" />
             ) : stage === 'measuring' ? (
-              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
+              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
             ) : ''}
+        
             {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
-              <div className="flex items-center w-full px-8 py-4 gap-2 absolute bottom-0 ">
+              <div className="flex items-center w-full px-8 py-4 gap-2 absolute bottom-0 z-10">
                 <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('face')])} />
                 <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('movement')])} />
                 <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('light')])} />
