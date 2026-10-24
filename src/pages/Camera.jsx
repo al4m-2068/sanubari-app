@@ -382,11 +382,19 @@ function Camera() {
               <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
             ) : ''}
         
-            {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
+            {stage === 'face' && (
               <div className="flex items-center w-full px-8 py-4 gap-2 absolute bottom-0 z-10">
-                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('face')])} />
-                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('movement')])} />
-                <div className={twMerge('w-full rounded-sm h-1', requirementsClass[getStageClass('light')])} />
+                {lineProgress.map((progress, index) => (
+                  <div
+                    key={index}
+                    className="relative w-full h-1 rounded-sm bg-th-plain-white overflow-hidden"
+                  >
+                    <div
+                      className="absolute inset-y-0 left-0 bg-th-green-dark"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -405,21 +413,16 @@ function Camera() {
               {notMeasureStages && stageTexts[stage] && stage !== 'finished' &&
                 <p className={`text-lg/[110%] ${stage === 'finished' && 'text-th-green-dark'}`}>{stageTexts[stage].p}</p>
               }
-              {(stage === 'face' || stage === 'finished') && (
-                <>
-                  <FaceGateProgress progress={lineProgress} />
-                  {stage === 'face' && (
-                    <p className="text-xs/[110%] text-th-plain-grey">
-                      {detectorError
-                        ? 'Face detection is unavailable. Please reload the page and enable hardware acceleration.'
-                        : !detectorReady
-                          ? 'Preparing face detection...'
-                          : faceInFrame
-                            ? 'Face detected, hold still!'
-                            : 'Place your face inside the frame'}
-                    </p>
-                  )}
-                </>
+              {stage === 'face' && (
+                <p className="text-xs/[110%] text-th-plain-grey">
+                  {detectorError
+                    ? 'Face detection is unavailable. Please reload the page and enable hardware acceleration.'
+                    : !detectorReady
+                      ? 'Preparing face detection...'
+                      : faceInFrame
+                        ? 'Face detected, hold still!'
+                        : 'Place your face inside the frame'}
+                </p>
               )}
               {stage === 'finished' && stageCompleted && notMeasureStages && (
                 <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
