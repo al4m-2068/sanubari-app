@@ -52,18 +52,6 @@ function hasWebGLSupport() {
   }
 }
 
-function FaceGateProgress({ progress }) {
-  return (
-    <div className="flex flex-col w-full gap-2">
-      {progress.map((value, index) => (
-        <div key={index} className="w-full h-1.5 rounded-sm bg-th-plain-grey/50 overflow-hidden">
-          <div className="h-full rounded-sm bg-th-green-dark" style={{ width: `${value}%` }} />
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function Camera() {
   const [start, setStart] = useState(false)
   const [resultStat, setResultStat] = useState(0)
@@ -89,6 +77,7 @@ function Camera() {
   const [detectorError, setDetectorError] = useState(false)
   const [lineProgress, setLineProgress] = useState([0, 0, 0])
   const lineProgressRef = useRef([0, 0, 0])
+  const [stageProgress, setStageProgress] = useState(0)
   // MediaPipe needs a strictly increasing millisecond timestamp, and every
   // submitted frame has to be a new one - both are kept across effect runs.
   const lastTimestampRef = useRef(0)
@@ -128,25 +117,104 @@ function Camera() {
 
   useEffect(() => {
     let stream = null
-    if (start) {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        .then((s) => {
-          stream = s
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream
-          }
+    let cancelled = false
+  
+    const startCamera = async () => {
+      if (!start) return
+  
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
         })
-        .catch((err) => {
-          console.error("Gagal mengakses kamera:", err)
+  
+        if (cancelled) {
+          stream.getTracks().forEach(track => track.stop())
+          return
+        }
+  
+        const video = videoRef.current
+  
+        if (!video) return
+  
+        video.srcObject = stream
+        video.muted = true
+        video.playsInline = true
+  
+        await video.play()
+  
+        console.log('[camera] video playing', {
+          readyState: video.readyState,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
         })
+      } catch (err) {
+        console.error('[camera] gagal mengakses kamera:', err)
+        setDetectorError(true)
+      }
     }
   
+    startCamera()
+  
     return () => {
+      cancelled = true
+  
       if (stream) {
         stream.getTracks().forEach(track => track.stop())
       }
+  
+      if (videoRef.current) {
+        videoRef.current.pause()
+        videoRef.current.srcObject = null
+      }
     }
   }, [start])
+
+
+  useEffect(() => {
+    if (stage !== 'movement' && stage !== 'light') return
+  
+    let animationFrame = 0
+    const startedAt = performance.now()
+    const stageDuration = 1000
+  
+    const fillStage = (now) => {
+      const elapsed = now - startedAt
+      const progress = Math.min((elapsed / stageDuration) * 100, 100)
+  
+      setStageProgress(progress)
+  
+      if (progress >= 100) {
+        setStageCompleted(prev => ({
+          ...prev,
+          [stage]: true,
+        }))
+  
+        const nextStageTimeout = setTimeout(() => {
+          setStage(prev =>
+            prev === 'movement'
+              ? 'light'
+              : prev === 'light'
+                ? 'finished'
+                : prev
+          )
+        }, 1000)
+  
+        return () => clearTimeout(nextStageTimeout)
+      }
+      animationFrame = requestAnimationFrame(fillStage)
+    }
+    animationFrame = requestAnimationFrame(fillStage)
+  
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      setStageProgress(0)
+    }
+  }, [stage])
   
   useEffect(() => {
     if (stage !== 'measuring') return
@@ -340,7 +408,15 @@ function Camera() {
       setLineProgress(next)
       // every line is full and the face is still in frame -> measuring can start
       if (next.every(value => value >= 100) && faceInFrameRef.current) {
-        setStage('finished')
+        setStageCompleted(prev => ({
+          ...prev,
+          face: true,
+        }))
+      
+        setTimeout(() => {
+          setStage('movement')
+        }, 1000)
+      
         return
       }
       raf = requestAnimationFrame(fill)
@@ -367,41 +443,71 @@ function Camera() {
       {start && (
         <>
         {stage !== 'result' && (
-          <div id="camContainer" ref={containerRef} onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-black shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
+          <div
+            id="camContainer"
+            ref={containerRef}
+            onMouseMove={handleMoveTooMuch}
+            style={{
+              width: 'calc(100% + 16px * 2)',
+              height: '532px'
+            }}
+            className={`bg-black shrink-0 items-center justify-center flex flex-col relative overflow-hidden`}
+          >
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="absolute inset-0 w-full h-full object-cover -scale-x-100"
+              className="absolute inset-0 z-0 w-full h-full object-cover -scale-x-100"
             />
-            <div className="absolute w-full h-full top-0 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
+        
+            <div className="absolute inset-0 z-[1] bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
+        
             {stage === 'face' ? (
-              <img ref={guideRef} src={faceGuide} alt="" className="z-10 pointer-events-none" />
+              <img
+                ref={guideRef}
+                src={faceGuide}
+                alt=""
+                className="relative z-10 pointer-events-none"
+              />
             ) : stage === 'measuring' ? (
-              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
+              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10">
+                <div
+                  className="flex h-2 transition-all duration-200 bg-th-green-dark w-8"
+                  style={{ width: `${resultStat}%` }}
+                />
+              </div>
             ) : ''}
         
-            {stage === 'face' && (
+            {stage !== 'finished' && notMeasureStages && (
               <div className="flex items-center w-full px-8 py-4 gap-2 absolute bottom-0 z-10">
-                {lineProgress.map((progress, index) => (
-                  <div
-                    key={index}
-                    className="relative w-full h-1 rounded-sm bg-th-plain-white overflow-hidden"
-                  >
-                    <div
-                      className="absolute inset-y-0 left-0 bg-th-green-dark"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                ))}
+                <div
+                  className={twMerge(
+                    'w-full rounded-sm h-1',
+                    requirementsClass[getStageClass('face')]
+                  )}
+                />
+        
+                <div
+                  className={twMerge(
+                    'w-full rounded-sm h-1',
+                    requirementsClass[getStageClass('movement')]
+                  )}
+                />
+        
+                <div
+                  className={twMerge(
+                    'w-full rounded-sm h-1',
+                    requirementsClass[getStageClass('light')]
+                  )}
+                />
               </div>
             )}
           </div>
         )}
 
-        {/* DIV for PREP ICONS [stageTexts.stage?.icon] */}
         {notMeasureStages && (
+
           <div className="flex flex-col items-center w-full h-full gap-7">
             {/* DIV for PREP INFO [stageTexts] */}
             <div className={`flex flex-col items-center justify-center h-full w-full gap-2 text-th-plain-grey text-center px-6.5`}>
