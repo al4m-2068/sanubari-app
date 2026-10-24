@@ -1,0 +1,21 @@
+# Runtime dependencies — Sanubari rPPG engine (Phase 9.1 Freeze baseline)
+#
+# Derived from the actual direct + transitive imports of the 10 packaged modules.
+# Verified against: rppg_core.py, rppg_config.py, rppg_algorithms.py, rppg_temporal.py,
+# rppg_sqi.py, rppg_signal.py, rppg_physio_state.py, rppg_uncertainty.py, rppg_roi.py,
+# rppg_benchmark.py
+#
+# Lower bounds follow the repository's existing .req.txt convention (not a lockfile:
+# the source repo has no committed lockfile for the rppg_env conda environment).
+
+numpy>=1.24.0
+scipy>=1.11.0
+opencv-python>=4.8.0
+scikit-learn>=1.3.0
+
+# NOT included on purpose:
+#   mediapipe  — not imported by any packaged module. It is only needed by
+#                 rppg_main.py (live camera app) and by the benchmark/acquisition
+#                 scripts, none of which are part of this migration package.
+#                 If Sanubari later needs MediaPipe face landmarks, install
+#                 mediapipe>=0.10.0 separately and provide models/face_landmarker.task.

@@ -1,10 +1,17 @@
 import { useEffect, useState, useRef } from "react"
 import { twMerge } from "tailwind-merge"
+import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision"
 import Button from "../components/atom/Button"
 import faceGuide from "/src/assets/images/face-guideline.svg"
 import Card from "../components/atom/Card"
 import { Link } from "react-router"
 import Drawer from "../components/Drawer"
+import {
+  FACE_MODEL_URL,
+  FACE_WASM_FILESET_URL,
+  getGuidePolygon,
+  isFaceInsideGuide,
+} from "../config/faceModel"
 
 const requirementsClass = {
   check: 'bg-th-green-dark',
@@ -26,6 +33,37 @@ const stageTexts = {
   },
 }
 
+/** Number of progress lines that have to be filled before measuring can start. */
+const PROGRESS_LINES = 3
+/** Time (ms) a single progress line needs to fill from empty to full. */
+const LINE_FILL_MS = 900
+
+/**
+ * MediaPipe needs a WebGL context for its graph. When the browser cannot
+ * provide one (hardware acceleration off, GPU blocked, ...) the detector would
+ * die with "GLctx is undefined", so we check it upfront and report it.
+ */
+function hasWebGLSupport() {
+  try {
+    const canvas = document.createElement('canvas')
+    return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'))
+  } catch {
+    return false
+  }
+}
+
+function FaceGateProgress({ progress }) {
+  return (
+    <div className="flex flex-col w-full gap-2">
+      {progress.map((value, index) => (
+        <div key={index} className="w-full h-1.5 rounded-sm bg-th-plain-grey/50 overflow-hidden">
+          <div className="h-full rounded-sm bg-th-green-dark" style={{ width: `${value}%` }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Camera() {
   const [start, setStart] = useState(false)
   const [resultStat, setResultStat] = useState(0)
@@ -42,6 +80,37 @@ function Camera() {
   const [moveTooMuch, setMoveTooMuch] = useState(false)
   const overviewStatus = 'Great'
   const videoRef = useRef(null)
+  const containerRef = useRef(null)
+  const guideRef = useRef(null)
+  const landmarkerRef = useRef(null)
+  const faceInFrameRef = useRef(false)
+  const [faceInFrame, setFaceInFrame] = useState(false)
+  const [detectorReady, setDetectorReady] = useState(false)
+  const [detectorError, setDetectorError] = useState(false)
+  const [lineProgress, setLineProgress] = useState([0, 0, 0])
+  const lineProgressRef = useRef([0, 0, 0])
+  // MediaPipe needs a strictly increasing millisecond timestamp, and every
+  // submitted frame has to be a new one - both are kept across effect runs.
+  const lastTimestampRef = useRef(0)
+  const lastVideoTimeRef = useRef(-1)
+  const detectionLoopRef = useRef(0)
+  const detectorAliveRef = useRef(false)
+  const detectionLogsRef = useRef(0)
+  const detectorSizeRef = useRef({ width: 0, height: 0 })
+  const [detectorKey, setDetectorKey] = useState(0)
+
+  /** Strictly increasing integer millisecond timestamp for detectForVideo(). */
+  const nextTimestamp = () => {
+    const now = Math.round(performance.now())
+    lastTimestampRef.current = Math.max(now, lastTimestampRef.current + 1)
+    return lastTimestampRef.current
+  }
+
+  /** Back to square one: no progress lines filled, no measuring button. */
+  const resetFaceGate = () => {
+    lineProgressRef.current = [0, 0, 0]
+    setLineProgress([0, 0, 0])
+  }
 
   function handleMoveTooMuch(e) {
     if (stage !== 'measuring') return
@@ -96,6 +165,191 @@ function Camera() {
     return () => clearTimeout(resultStatTimeout)
   }, [stage, resultStat])
 
+  /* LOAD FACE DETECTOR */
+  useEffect(() => {
+    if (!start) return
+    let cancelled = false
+    let landmarker = null
+
+    const createLandmarker = async () => {
+      const fileset = await FilesetResolver.forVisionTasks(FACE_WASM_FILESET_URL)
+      return FaceLandmarker.createFromOptions(fileset, {
+        // CPU delegate: the detector must not depend on a WebGL/GPU context,
+        // otherwise the browser throws "GLctx is undefined".
+        baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate: 'CPU' },
+        runningMode: 'IMAGE',
+        numFaces: 1,
+        minFaceDetectionConfidence: 0.5,
+        minFacePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      })
+    }
+
+    const load = async () => {
+      if (!hasWebGLSupport()) {
+        setDetectorError(true)
+        return
+      }
+      try {
+        landmarker = await createLandmarker()
+        if (cancelled) {
+          landmarker.close()
+          return
+        }
+        landmarkerRef.current = landmarker
+        detectorAliveRef.current = true
+        // a new detector starts with a new stream: reset the frame bookkeeping
+        lastVideoTimeRef.current = -1
+        detectorSizeRef.current = { width: videoRef.current?.videoWidth ?? 0, height: videoRef.current?.videoHeight ?? 0 }
+        setDetectorReady(true)
+      } catch (err) {
+        console.error("Gagal memuat model deteksi wajah:", err)
+        if (!cancelled) setDetectorError(true)
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+      detectorAliveRef.current = false
+      if (landmarkerRef.current) {
+        landmarkerRef.current.close()
+        landmarkerRef.current = null
+      }
+      setDetectorReady(false)
+    }
+  }, [start, detectorKey])
+
+  /* DETECT FACE INSIDE THE FRAME */
+  useEffect(() => {
+    if (!start || !detectorReady || detectorError) return
+    if (stage === 'measuring' || stage === 'result') return
+
+    let raf = 0
+    let stopped = false
+
+    const detect = () => {
+      const video = videoRef.current
+      const container = containerRef.current
+      const landmarker = landmarkerRef.current
+      // the detector must be alive and the video must have real dimensions
+      if (!video || !container || !landmarker || !detectorAliveRef.current) return
+      if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+        raf = requestAnimationFrame(detect)
+        return
+      }
+      // the graph is built for one frame size: a size change needs a new detector
+      const size = detectorSizeRef.current
+      if (!size.width) {
+        detectorSizeRef.current = { width: video.videoWidth, height: video.videoHeight }
+      } else if (size.width !== video.videoWidth || size.height !== video.videoHeight) {
+        console.warn('[face] ukuran video berubah, membuat ulang detector', video.videoWidth, video.videoHeight)
+        setDetectorKey(key => key + 1)
+        return
+      }
+      // only a new frame may be submitted, the timestamp has to move forward
+      if (video.currentTime !== lastVideoTimeRef.current) {
+        lastVideoTimeRef.current = video.currentTime
+        const previousTimestamp = lastTimestampRef.current
+        const timestamp = nextTimestamp()
+        if (detectionLogsRef.current < 5) {
+          detectionLogsRef.current++
+          console.log('[face] detect', {
+            timestamp,
+            previousTimestamp,
+            videoTime: video.currentTime,
+            width: video.videoWidth,
+            height: video.videoHeight,
+          })
+        }
+        try {
+          const results = landmarker.detect(video);
+          const landmarks = results.faceLandmarks?.[0]
+          const inside = landmarks
+            ? isFaceInsideGuide(
+              landmarks,
+              {
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight,
+                containerWidth: container.clientWidth,
+                containerHeight: container.clientHeight,
+              },
+              getGuidePolygon(container, guideRef.current),
+            )
+            : false
+          if (inside !== faceInFrameRef.current) {
+            faceInFrameRef.current = inside
+            setFaceInFrame(inside)
+            if (!inside) {
+              // the face is gone or out of frame: reset the progress before it is finished
+              if (stage === 'face') {
+                lineProgressRef.current = [0, 0, 0]
+                setLineProgress([0, 0, 0])
+              }
+            }
+          }
+        } catch (err) {
+          // the detector is broken - stop the loop instead of flooding the console
+          console.error("Deteksi wajah dihentikan:", err)
+          stopped = true
+          faceInFrameRef.current = false
+          setFaceInFrame(false)
+          setLineProgress([0, 0, 0])
+          setDetectorError(true)
+          return
+        }
+      }
+      if (!stopped) {
+        raf = requestAnimationFrame(detect)
+        detectionLoopRef.current = raf
+      }
+    }
+
+    // one single detection loop: never schedule a second one while this runs
+    if (detectionLoopRef.current) cancelAnimationFrame(detectionLoopRef.current)
+    raf = requestAnimationFrame(detect)
+    detectionLoopRef.current = raf
+
+    return () => {
+      stopped = true
+      cancelAnimationFrame(raf)
+      if (detectionLoopRef.current === raf) detectionLoopRef.current = 0
+    }
+  }, [start, detectorReady, detectorError, stage])
+
+  /* FILL THE PROGRESS LINES ONE BY ONE */
+  useEffect(() => {
+    if (!faceInFrame || stage !== 'face') return
+
+    let raf = 0
+    let previousTime = performance.now()
+
+    const fill = (now) => {
+      const elapsed = now - previousTime
+      previousTime = now
+      // the face has to stay in frame while the lines are filling
+      if (!faceInFrameRef.current) return
+      const next = [...lineProgressRef.current]
+      for (let index = 0; index < PROGRESS_LINES; index++) {
+        if (next[index] >= 100) continue
+        next[index] = Math.min(100, next[index] + (elapsed / LINE_FILL_MS) * 100)
+        break
+      }
+      lineProgressRef.current = next
+      setLineProgress(next)
+      // every line is full and the face is still in frame -> measuring can start
+      if (next.every(value => value >= 100) && faceInFrameRef.current) {
+        setStage('finished')
+        return
+      }
+      raf = requestAnimationFrame(fill)
+    }
+
+    raf = requestAnimationFrame(fill)
+    return () => cancelAnimationFrame(raf)
+  }, [faceInFrame, stage])
+
   return (
     <div className={`flex flex-col items-center h-full pb-33 ${stage === 'measuring' ? 'gap-0' : stage === 'result' ? 'gap-12 overflow-y-auto scrollbar-none' : 'gap-7'}`}>
       {/* DIV for START OVERLAY */}
@@ -113,7 +367,7 @@ function Camera() {
       {start && (
         <>
         {stage !== 'result' && (
-          <div id="camContainer" onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-black shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
+          <div id="camContainer" ref={containerRef} onMouseMove={handleMoveTooMuch} style={{ width: 'calc(100% + 16px * 2)', height: '532px' }} className={`bg-black shrink-0 items-center justify-center flex flex-col relative ${stage !== 'measuring' && 'rounded-b-[36px] overflow-hidden'}`}>
             <video
               ref={videoRef}
               autoPlay
@@ -123,7 +377,7 @@ function Camera() {
             />
             <div className="absolute w-full h-full top-0 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
             {stage === 'face' ? (
-              <img src={faceGuide} alt="" className="z-10 pointer-events-none" />
+              <img ref={guideRef} src={faceGuide} alt="" className="z-10 pointer-events-none" />
             ) : stage === 'measuring' ? (
               <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10"><div className="flex h-2 transition-all duration-200 bg-th-green-dark w-8" style={{ width: `${resultStat}%` }} /></div>
             ) : ''}
@@ -151,6 +405,22 @@ function Camera() {
               {notMeasureStages && stageTexts[stage] && stage !== 'finished' &&
                 <p className={`text-lg/[110%] ${stage === 'finished' && 'text-th-green-dark'}`}>{stageTexts[stage].p}</p>
               }
+              {(stage === 'face' || stage === 'finished') && (
+                <>
+                  <FaceGateProgress progress={lineProgress} />
+                  {stage === 'face' && (
+                    <p className="text-xs/[110%] text-th-plain-grey">
+                      {detectorError
+                        ? 'Face detection is unavailable. Please reload the page and enable hardware acceleration.'
+                        : !detectorReady
+                          ? 'Preparing face detection...'
+                          : faceInFrame
+                            ? 'Face detected, hold still!'
+                            : 'Place your face inside the frame'}
+                    </p>
+                  )}
+                </>
+              )}
               {stage === 'finished' && stageCompleted && notMeasureStages && (
                 <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
                   setStage('measuring')
@@ -198,6 +468,7 @@ function Camera() {
         {stage === 'measuring' && moveTooMuch && (
           <Drawer onClose={() => {
             setMoveTooMuch(false)
+            resetFaceGate()
             setStage('face')
           }} isOpen={moveTooMuch} className={'h-74 justify-between relative'}>
             <i className="fi fi-rr-seal-exclamation text-[166px]/[80%] absolute -z-1 top-1/2 -translate-y-1/2 text-th-green-dark/20"></i>
@@ -207,6 +478,7 @@ function Camera() {
             </div>
             <Button onClick={() => {
               setMoveTooMuch(false)
+              resetFaceGate()
               setStage('face')
             }} className={'text-xs/[90%] font-medium w-full h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white'}>Okay</Button>
           </Drawer>
@@ -259,6 +531,7 @@ function Camera() {
               setMoveTooMuch(false)
               setStage('')
               setResultStat(0)
+              resetFaceGate()
               setStageCompleted(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])))
             }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white shrink-0'}>Back to Dashboard</Link>
           </>
