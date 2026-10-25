@@ -49,7 +49,7 @@ function Chatbot() {
   // const chats = useSariAuthStore(state => state.user.chatData)
   // const recentChatsMeta = chats.slice(0, 3).map(({ topic, chatId }) => ({ topic, chatId }))
   return (
-    <div className="flex flex-col h-full pt-16 gap-9 pb-33 overflow-y-auto scrollbar-none">
+    <div className="flex flex-col h-full pt-16 gap-9 overflow-y-auto scrollbar-none">
       <div className="flex flex-col h-full w-full gap-11 justify-between">
         <h1 className="text-[64px]/100 font-medium font-cabinet px-4">Start<br/>Chatting.</h1>
         <div className="relative flex flex-col items-center w-full gap-5">

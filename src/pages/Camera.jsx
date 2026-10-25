@@ -185,13 +185,13 @@ function LiveMeasurementAreaChart({ bpmValues }) {
 function Camera() {
 
   const addMeasurement = useSariAuthStore(state => state.addMeasurement)
-  const [start, setStart] = useState(true)
+  const [start, setStart] = useState(false)
   const [resultStat, setResultStat] = useState(0)
-  const [stage, setStage] = useState('result')
+  const [stage, setStage] = useState('')
   const [stageCompleted, setStageCompleted] = useState({
-    face: true,
-    movement: true,
-    light: true,
+    face: false,
+    movement: false,
+    light: false,
   })
   const getStageClass = (label) => stage === label ? 'onStage' : stageCompleted[label] ? 'check' : 'uncheck'
   const notMeasureStages = stage !== 'measuring' && stage !== 'result'
