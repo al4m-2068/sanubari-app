@@ -119,7 +119,7 @@ function Profile() {
   if (!user) return null
 
   return (
-    <div className="flex flex-col items-center pt-16 gap-6">
+    <div className="flex flex-col items-center pt-16 gap-6 -mb-27">
       <div className="flex flex-col items-center gap-8 z-2">
         <img src={user.profilePicture} referrerPolicy="no-referrer" alt="" className="size-48 rounded-[64px] border-[1.2px] border-th-plain-grey object-cover object-center" />
         <div className="flex flex-col items-center text-center">
@@ -154,11 +154,11 @@ function Profile() {
           Designated for personal wellness insights, not a<br/>replacement for professional medical device
         </p>
       </div>
-      <div className="fixed bottom-0 flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
-        <div className="relative flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
+      <div className="sticky -bottom-27 mt-[-55%] flex flex-col items-center justify-center w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
+        <div className="relative flex flex-col items-center justify-center h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
           <img src={homeFooter} alt="SANUBARI Logo" className="inline-block scale-110" />
         </div>
-        <div className="h-70 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
+        <div className="h-55 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
       </div>
       {logoutPopup && (
         <Drawer onClose={() => {

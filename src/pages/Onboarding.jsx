@@ -20,7 +20,7 @@ function Onboarding() {
   const [stage, setStage] = useState(null)
 
   return (
-    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative justify-between overflow-hidden`}>
+    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative justify-between overflow-y-auto`}>
       {!stage && (
         <>
         <div className="flex flex-col gap-6 items-start z-2">
