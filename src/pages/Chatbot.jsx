@@ -49,10 +49,10 @@ function Chatbot() {
   // const chats = useSariAuthStore(state => state.user.chatData)
   // const recentChatsMeta = chats.slice(0, 3).map(({ topic, chatId }) => ({ topic, chatId }))
   return (
-    <div className="flex flex-col h-full pt-16 gap-9 overflow-y-auto scrollbar-none">
+    <div className="flex flex-col pt-16 gap-9 min-h-full">
       <div className="flex flex-col h-full w-full gap-11 justify-between">
         <h1 className="text-[64px]/100 font-medium font-cabinet px-4">Start<br/>Chatting.</h1>
-        <div className="relative flex flex-col items-center w-full gap-5">
+        <div className="relative flex flex-col items-center w-full gap-5 -mb-27">
           {/* // QUESTION SUGGESTIONS // */}
           <div className="flex gap-1 w-full overflow-x-auto scrollbar-none fade-x fade-size-x-2xl h-48 box-content p-4 -m-4">
             <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[1])} to={`/chatbot/session`} state={{ initialQuestion: 'Why might measurements vary?' }}><span className="text-xs text-th-oak">Topic Suggestions</span> Why might measurements vary?</NavLink>
@@ -66,7 +66,7 @@ function Chatbot() {
             </NavLink>
             <NavLink className={twMerge('h-full transition-all duration-500 hover:scale-107 flex-col shrink-0 text-lg/100 font-medium w-40 flex justify-between p-4 -mb-7 rounded-2xl text-th-plain-black items-start', suggestionsClass[2])} to={`/chatbot/session`} state={{ initialQuestion: 'How does rPPG work?' }}><span className="text-xs text-th-plain-black/30">Topic Suggestions</span> How does rPPG work?</NavLink>
           </div>
-          <div className="flex flex-col text-xs min-h-25 max-h-40 bg-white border-[1.2px] border-th-plain-grey p-4 rounded-2xl w-full gap-2 has-focus:outline-2 outline-th-green-dark">
+          <div className=" flex flex-col text-xs min-h-25 max-h-40 bg-white border-[1.2px] border-th-plain-grey p-4 rounded-2xl w-full gap-2 has-focus:outline-2 outline-th-green-dark mb-27">
             <textarea
               ref={textareaRef}
               value={inputText}
