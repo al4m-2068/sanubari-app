@@ -170,12 +170,10 @@ export const useSariAuthStore = create(
 
       editAccount: (email, password, firstName, lastName, profilePicture) => {
         const currentUser = get().user
-
         if (!currentUser) {
           set({ error: 'You must be signed in to edit your account.' })
           return false
         }
-
         const updatedUser = {
           ...currentUser,
           name: {
@@ -188,16 +186,54 @@ export const useSariAuthStore = create(
           profilePicture: profilePicture !== undefined ? profilePicture : currentUser.profilePicture,
           notifications: currentUser.notifications ?? MOCK_USERS[0]?.notifications ?? [],
         }
-        
+      
         const mockIndex = MOCK_USERS.findIndex(u => u.id === currentUser.id)
         if (mockIndex !== -1) MOCK_USERS[mockIndex] = updatedUser
-
         set({
           user: updatedUser,
           notifications: updatedUser.notifications ?? [],
           error: null,
         })
 
+        return true
+      },
+      addMeasurement: (measurement) => {
+        const currentUser = get().user
+        const bpm = Number(measurement?.bpm)
+        if (!currentUser || !Number.isFinite(bpm) || bpm <= 0) {
+          return false
+        }
+
+        const nextMeasurement = {
+          id: measurement?.id ?? `measurement-${Date.now()}`,
+          date: measurement?.date ?? new Date().toISOString(),
+          bpm: Math.round(bpm),
+          ...(Number.isFinite(Number(measurement?.peakBpm)) && {
+            peakBpm: Math.round(Number(measurement.peakBpm)),
+          }),
+          ...(Number.isFinite(Number(measurement?.lowestBpm)) && {
+            lowestBpm: Math.round(Number(measurement.lowestBpm)),
+          }),
+          ...(Number.isFinite(Number(measurement?.sqi)) && {
+            sqi: Math.round(Number(measurement.sqi)),
+          }),
+          ...(Number.isFinite(Number(measurement?.confidence)) && {
+            confidence: Math.round(Number(measurement.confidence)),
+          }),
+        }
+        const measurementData = [
+          ...(currentUser.measurementData ?? []),
+          nextMeasurement,
+        ]
+        const updatedUser = {
+          ...currentUser,
+          measurementData,
+        }
+        const mockIndex = MOCK_USERS.findIndex(user => user.id === currentUser.id)
+        if (mockIndex !== -1) {
+          MOCK_USERS[mockIndex] = updatedUser
+        }
+        set({ user: updatedUser })
         return true
       },
       deleteNotification: (id) => {

@@ -1,0 +1,23 @@
+# API dependencies for the Sanubari rPPG bridge (backend/main.py)
+#
+# Install into the SAME conda environment that can import the engine
+# (`conda run -n rppg_env python -c "from rppg_core import MultiROIFusionEngineV2"`).
+#
+#   conda activate rppg_env
+#   pip install -r backend/requirements.txt
+#
+# The engine's own dependencies are NOT duplicated here in full - they stay in
+# migration_package/requirements.txt (numpy, scipy, opencv-python, scikit-learn).
+# The lines below are repeated only so `pip install -r backend/requirements.txt`
+# alone produces a working environment.
+
+# --- web API ---
+fastapi>=0.110.0
+uvicorn>=0.27.0
+pydantic>=2.6.0
+
+# --- engine runtime (mirrors migration_package/requirements.txt) ---
+numpy>=1.24.0
+scipy>=1.11.0
+opencv-python>=4.8.0
+scikit-learn>=1.3.0

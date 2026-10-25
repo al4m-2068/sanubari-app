@@ -12,6 +12,14 @@ import {
   getGuidePolygon,
   isFaceInsideGuide,
 } from "../config/faceModel"
+import {
+  RPPG_FRAME_INTERVAL_MS,
+  resetRppgSession,
+  sendRppgFrame,
+  toWireLandmarks,
+} from "../services/rppg"
+import { useSariAuthStore } from "../data/sariAuthStore"
+
 
 const requirementsClass = {
   check: 'bg-th-green-dark',
@@ -38,6 +46,11 @@ const PROGRESS_LINES = 3
 /** Time (ms) a single progress line needs to fill from empty to full. */
 const LINE_FILL_MS = 900
 
+/** Longest edge of the frame uploaded to the rPPG bridge (keeps the JPEG small). */
+const RPPG_MAX_FRAME_WIDTH = 640
+/** JPEG quality of the uploaded frame. */
+const RPPG_JPEG_QUALITY = 0.8
+
 /**
  * MediaPipe needs a WebGL context for its graph. When the browser cannot
  * provide one (hardware acceleration off, GPU blocked, ...) the detector would
@@ -52,7 +65,126 @@ function hasWebGLSupport() {
   }
 }
 
+function buildLiveChartPath(points) {
+  if (!points.length) return ''
+
+  const coordinates = points.map(({ y }, index) => ({
+    x: points.length === 1
+      ? 50
+      : (index / (points.length - 1)) * 100,
+    y,
+  }))
+
+  if (coordinates.length === 1) {
+    return `M ${coordinates[0].x} ${coordinates[0].y}`
+  }
+
+  let path = `M ${coordinates[0].x} ${coordinates[0].y}`
+
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const previous = coordinates[index - 1]
+    const current = coordinates[index]
+    const middleX = (previous.x + current.x) / 2
+
+    path += ` Q ${middleX} ${previous.y} ${current.x} ${current.y}`
+  }
+
+  return path
+}
+
+function LiveMeasurementAreaChart({ bpmValues }) {
+  if (!bpmValues.length) {
+    return (
+      <div className="flex h-full items-center justify-center text-xs text-th-plain-grey">
+        Waiting for heart rate data...
+      </div>
+    )
+  }
+
+  const visibleValues = bpmValues.slice(-48)
+
+  // Baseline sesi: membuat kondisi normal terlihat lurus di tengah chart.
+  const baseline = visibleValues.reduce((total, bpm) => total + bpm, 0) / visibleValues.length
+
+  // Smoothing ringan supaya chart tidak terlalu bergetar karena noise rPPG.
+  const smoothedValues = visibleValues.reduce((values, bpm, index) => {
+    if (index === 0) return [bpm]
+
+    const previous = values[index - 1]
+    const smoothed = previous + (bpm - previous) * 0.25
+
+    return [...values, smoothed]
+  }, [])
+
+  const points = smoothedValues.map((bpm, index) => {
+    // Nilai di atas baseline bergerak ke atas.
+    // Nilai di bawah baseline bergerak ke bawah.
+    const deviation = bpm - baseline
+    const y = Math.max(12, Math.min(88, 50 - deviation * 2.2))
+
+    return {
+      x: visibleValues.length === 1
+        ? 50
+        : (index / (visibleValues.length - 1)) * 100,
+      y,
+    }
+  })
+
+  const linePath = buildLiveChartPath(points)
+  const areaPath = [
+    `M ${points[0].x} 100`,
+    linePath.replace(/^M /, 'L '),
+    `L ${points[points.length - 1].x} 100`,
+    'Z',
+  ].join(' ')
+
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden rounded-2xl"
+      aria-label={`Live heart rate trend at ${Math.round(visibleValues.at(-1))} BPM`}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="h-full w-full"
+        role="img"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient
+            id="live-measurement-area-gradient"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop offset="0%" stopColor="#DDB8D6" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#F1E3EF" stopOpacity="0.45" />
+          </linearGradient>
+        </defs>
+
+        <path
+          d={areaPath}
+          fill="url(#live-measurement-area-gradient)"
+        />
+
+        <path
+          d={linePath}
+          fill="none"
+          stroke="#D4AED0"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  )
+}
+
 function Camera() {
+
+  const addMeasurement = useSariAuthStore(state => state.addMeasurement)
   const [start, setStart] = useState(false)
   const [resultStat, setResultStat] = useState(0)
   const [stage, setStage] = useState('')
@@ -63,10 +195,11 @@ function Camera() {
   })
   const getStageClass = (label) => stage === label ? 'onStage' : stageCompleted[label] ? 'check' : 'uncheck'
   const notMeasureStages = stage !== 'measuring' && stage !== 'result'
-  const expectedTime = /* 30000 */ 5000
+  // A real rPPG reading needs ~120 frames per ROI (engine MIN_FRAMES), which
+  // at the upload rate below means a measurement window of about half a minute.
+  const expectedTime = /* 30000 */ 30000
   const perMs = /* 30000 */ 100
   const [moveTooMuch, setMoveTooMuch] = useState(false)
-  const overviewStatus = 'Great'
   const videoRef = useRef(null)
   const containerRef = useRef(null)
   const guideRef = useRef(null)
@@ -88,6 +221,41 @@ function Camera() {
   const detectorSizeRef = useRef({ width: 0, height: 0 })
   const [detectorKey, setDetectorKey] = useState(0)
 
+  /* rPPG BRIDGE */
+  // Offscreen canvas that turns the current video frame into the JPEG the
+  // bridge expects.
+  const rppgCanvasRef = useRef(null)
+  // Last payload returned by the bridge (BPM, SQI, confidence, calibration...).
+  const [vitals, setVitals] = useState(null)
+  // 'waiting' | 'ok' | 'no-face' | 'camera' | 'error'
+  const [backendStatus, setBackendStatus] = useState('waiting')
+  const [backendError, setBackendError] = useState(false)
+  const [cameraStopped, setCameraStopped] = useState(false)  // Every BPM the bridge reported during the session (0 is never stored).
+  const bpmSamplesRef = useRef([])
+  const [liveBpmValues, setLiveBpmValues] = useState([])
+  const measurementSavedRef = useRef(false)
+  const [bpmStats, setBpmStats] = useState({ average: null, peak: null, lowest: null })
+
+
+  /* DERIVED VITALS (from the rPPG bridge) */
+  // A BPM of 0 means "no measurement" - it must never be shown as a result.
+  const currentBpm = vitals?.bpm > 0 ? vitals.bpm : null
+  const { average: bpmAverage, peak: bpmPeak, lowest: bpmLowest } = bpmStats
+  const hasReading = bpmAverage !== null
+  /** Overview of the session: only positive when a real reading was captured. */
+  const overviewStatus = hasReading ? 'Great!' : 'No data'
+  /** Formats a BPM for the UI: missing measurements show as "--". */
+  const formatBpm = (value) => (value === null || value <= 0 ? '--' : String(value))
+  const sqiValue = vitals ? Math.round(vitals.sqi) : null
+  const confidenceValue = vitals ? Math.round(vitals.confidence) : null
+  const calibrationText = !vitals
+    ? 'Waiting for data'
+    : vitals.calibration?.done
+      ? 'Calibrated'
+      : vitals.calibration?.in_calibration
+        ? 'Calibrating'
+        : 'Measuring'
+
   /** Strictly increasing integer millisecond timestamp for detectForVideo(). */
   const nextTimestamp = () => {
     const now = Math.round(performance.now())
@@ -101,18 +269,16 @@ function Camera() {
     setLineProgress([0, 0, 0])
   }
 
-  function handleMoveTooMuch(e) {
+  function handleMoveTooMuch(motionRejected) {
     if (stage !== 'measuring') return
-    const moveX = e.movementX
-    const moveY = e.movementY
-    
-    if (Math.abs(moveX) > 20 || Math.abs(moveY) > 20) {
+  
+    if (motionRejected) {
       setMoveTooMuch(true)
       setResultStat(0)
-      setStageCompleted(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])))
+      setStageCompleted(prev =>
+        Object.fromEntries(Object.keys(prev).map(key => [key, false]))
+      )
     }
-
-    console.log(moveX, moveY)
   }
 
   useEffect(() => {
@@ -121,7 +287,8 @@ function Camera() {
   
     const startCamera = async () => {
       if (!start) return
-  
+      setCameraStopped(false)
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -146,7 +313,16 @@ function Camera() {
         video.playsInline = true
   
         await video.play()
-  
+
+        // the camera can be revoked or unplugged while measuring
+        const [videoTrack] = stream.getVideoTracks()
+        if (videoTrack) {
+          videoTrack.addEventListener('ended', () => {
+            console.warn('[camera] stream kamera berakhir')
+            setCameraStopped(true)
+          })
+        }
+
         console.log('[camera] video playing', {
           readyState: video.readyState,
           videoWidth: video.videoWidth,
@@ -159,14 +335,14 @@ function Camera() {
     }
   
     startCamera()
-  
+
     return () => {
       cancelled = true
-  
+
       if (stream) {
         stream.getTracks().forEach(track => track.stop())
       }
-  
+
       if (videoRef.current) {
         videoRef.current.pause()
         videoRef.current.srcObject = null
@@ -232,6 +408,40 @@ function Camera() {
 
     return () => clearTimeout(resultStatTimeout)
   }, [stage, resultStat])
+
+  useEffect(() => {
+    if (stage !== 'result') return
+    if (bpmAverage === null) return
+    if (measurementSavedRef.current) return
+
+    const saved = addMeasurement({
+      date: new Date().toISOString(),
+      bpm: bpmAverage,
+      peakBpm: bpmPeak,
+      lowestBpm: bpmLowest,
+      sqi: sqiValue,
+      confidence: confidenceValue,
+    })
+
+    if (saved) {
+      measurementSavedRef.current = true
+      console.log('[RPPG MEASUREMENT SAVED]', {
+        bpm: bpmAverage,
+        peakBpm: bpmPeak,
+        lowestBpm: bpmLowest,
+        sqi: sqiValue,
+        confidence: confidenceValue,
+      })
+    }
+  }, [
+    stage,
+    bpmAverage,
+    bpmPeak,
+    bpmLowest,
+    sqiValue,
+    confidenceValue,
+    addMeasurement,
+  ])
 
   /* LOAD FACE DETECTOR */
   useEffect(() => {
@@ -426,8 +636,123 @@ function Camera() {
     return () => cancelAnimationFrame(raf)
   }, [faceInFrame, stage])
 
+  /* SEND THE CAMERA FRAME + LANDMARKS TO THE rPPG BRIDGE */
+  useEffect(() => {
+    if (stage !== 'measuring') return
+    if (!detectorReady || detectorError) return
+
+    const canvas = rppgCanvasRef.current
+    if (!canvas) return
+    const context = canvas.getContext('2d')
+
+    let raf = 0
+    let stopped = false
+    let requestInFlight = false
+    let lastSentAt = 0
+
+    const tick = async (now) => {
+      if (stopped) return
+      raf = requestAnimationFrame(tick)
+
+      const video = videoRef.current
+      const landmarker = landmarkerRef.current
+      if (!video || !landmarker || !detectorAliveRef.current) return
+
+      // the camera is gone (revoked, unplugged, tab closed)
+      if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+        setBackendStatus('camera')
+        return
+      }
+
+      // never send faster than the configured interval, never stack requests
+      if (requestInFlight || now - lastSentAt < RPPG_FRAME_INTERVAL_MS) return
+
+      // 1) landmarks of the current frame, computed in the browser
+      let landmarks
+      try {
+        const results = landmarker.detect(video)
+        landmarks = toWireLandmarks(results.faceLandmarks?.[0])
+      } catch (err) {
+        console.error('[rppg] deteksi wajah gagal:', err)
+        return
+      }
+
+      // 2) the very same frame as JPEG. The video element itself is NOT
+      //    mirrored (only the preview is, with CSS), so the landmarks stay
+      //    aligned with the pixels the bridge receives.
+      const scale = Math.min(1, RPPG_MAX_FRAME_WIDTH / video.videoWidth)
+      const width = Math.round(video.videoWidth * scale)
+      const height = Math.round(video.videoHeight * scale)
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
+      context.drawImage(video, 0, 0, width, height)
+      const frameBase64 = canvas.toDataURL('image/jpeg', RPPG_JPEG_QUALITY).split(',')[1]
+
+      // no face -> nothing to measure, the session keeps its last reading
+      if (!landmarks) {
+        setBackendStatus('no-face')
+        return
+      }
+
+      // 3) ship it to the bridge
+      requestInFlight = true
+      lastSentAt = now
+      const result = await sendRppgFrame(frameBase64, landmarks)
+      requestInFlight = false
+      if (stopped) return
+
+      if (!result.ok) {
+        console.error('[rppg] permintaan gagal:', result.error)
+        setBackendError(true)
+        setBackendStatus('error')
+        return
+      }
+
+      setBackendError(false)
+      setBackendStatus('ok')
+      const data = result.data
+      console.log('[RPPG FRAME RESPONSE]', data)
+      setVitals(data)
+      
+      // Trigger the movement warning only from the backend's motion detection.
+      handleMoveTooMuch(data?.motion?.rejected === true)
+      
+      // A BPM of 0 means "no measurement yet".
+      if (data?.bpm > 0) {
+        const samples = [...bpmSamplesRef.current, data.bpm]
+        bpmSamplesRef.current = samples
+
+        setLiveBpmValues(currentValues => [
+          ...currentValues,
+          data.bpm,
+        ].slice(-48))
+
+        setBpmStats({
+          average: Math.round(
+            samples.reduce((sum, value) => sum + value, 0) / samples.length
+          ),
+          peak: Math.round(Math.max(...samples)),
+          lowest: Math.round(Math.min(...samples)),
+        })
+      }
+    }
+
+    raf = requestAnimationFrame(tick)
+
+    return () => {
+      stopped = true
+      cancelAnimationFrame(raf)
+    }
+  }, [stage, detectorReady, detectorError])
+
   return (
     <div className={`flex flex-col items-center h-full pb-33 ${stage === 'measuring' ? 'gap-0' : stage === 'result' ? 'gap-12 overflow-y-auto scrollbar-none' : 'gap-7'}`}>
+      {/* Offscreen canvas: turns the current video frame into the JPEG that is
+          sent to the rPPG bridge. */}
+      <canvas ref={rppgCanvasRef} className="hidden" aria-hidden="true" />
+
       {/* DIV for START OVERLAY */}
       {!start &&
         <div className="flex flex-col items-center justify-center w-full h-full gap-3 px-6 text-center">
@@ -446,7 +771,6 @@ function Camera() {
           <div
             id="camContainer"
             ref={containerRef}
-            onMouseMove={handleMoveTooMuch}
             style={{
               width: 'calc(100% + 16px * 2)',
               height: '532px'
@@ -531,7 +855,17 @@ function Camera() {
                 </p>
               )}
               {stage === 'finished' && stageCompleted && notMeasureStages && (
-                <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={() => {
+                <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={async () => {
+                  measurementSavedRef.current = false
+                  bpmSamplesRef.current = []
+                  setBpmStats({ average: null, peak: null, lowest: null })
+                  setVitals(null)
+                  setBackendError(false)
+                  setBackendStatus('waiting')
+                  const reset = await resetRppgSession()
+                  if (!reset.ok) {
+                    console.error('[rppg] reset session gagal:', reset.error)
+                  }
                   setStage('measuring')
                 }}>Start Measuring!</Button>
               )}
@@ -548,25 +882,47 @@ function Camera() {
                 <span className="font-normal">Measuring...</span>
               </p>
               <span className="flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-lg bg-th-green-dark/20 text-th-green-dark">
-                <div className="rounded-full size-2 bg-th-green-dark"></div>
-                Stable
+                <div className={`rounded-full size-2 ${vitals?.motion?.rejected ? 'bg-th-purple-light' : 'bg-th-green-dark'}`}></div>
+                {vitals?.motion?.rejected ? 'Moving' : 'Stable'}
               </span>
             </div>
             {/* CHART DIV */}
-            <div className="h-full"></div>
+            <div className="h-32 w-full">
+              <LiveMeasurementAreaChart bpmValues={liveBpmValues} />
+            </div>
+
+            {/* LIVE VITALS FROM THE rPPG BRIDGE */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
+              <span className="flex items-center gap-1">
+                <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(currentBpm)}</span>bpm
+              </span>
+              <span>SQI <span className="text-th-plain-black font-medium">{sqiValue ?? '--'}</span></span>
+              <span>Confidence <span className="text-th-plain-black font-medium">{confidenceValue ?? '--'}</span></span>
+              <span>{calibrationText}</span>
+            </div>
+
+            {(backendError || cameraStopped || backendStatus === 'no-face') && (
+              <p className="text-xs/[110%] text-th-plain-grey">
+                {backendError
+                  ? 'Measurement server unreachable - retrying...'
+                  : cameraStopped
+                    ? 'Camera stopped - please restart the measurement'
+                    : 'Face not detected - keep your face in the frame'}
+              </p>
+            )}
 
             {/* INFO DIV */}
             <div className="flex w-full gap-8">
               <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{'67'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmAverage)}</span>bpm</p>
                 <p className="text-lg/[90%]">Average</p>
               </div>
               <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{'59'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmPeak)}</span>bpm</p>
                 <p className="text-lg/[90%]">Peak</p>
               </div>
               <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{'70'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmLowest)}</span>bpm</p>
                 <p className="text-lg/[90%]">Lowest</p>
               </div>
             </div>
@@ -598,24 +954,26 @@ function Camera() {
           <>
             <div className="flex flex-col items-center justify-center gap-2 text-center text-th-plain-black w-49 mt-23">
               <h1 className="text-4xl/[110%] font-bold text-th-green-darker font-cabinet">Well Done!</h1>
-              <p className="text-xs/[110%]">your heart rate is within a healthy range, with an average of</p>
+              <p className="text-xs/[110%]">{hasReading
+                ? 'your heart rate is within a healthy range, with an average of'
+                : 'we could not capture a stable reading, please try again in better light'}</p>
             </div>
             <div className="flex flex-col w-full gap-3">
               <Card className={'h-64 grid auto-rows-max gap-x-2 gap-y-4 grid-cols-[132px_132px_1fr] w-full rounded-3xl'}>
-                <div className="flex flex-col gap-6"> 
+                <div className="flex flex-col gap-6">
                     <p className="text-lg/[110%] font-medium flex flex-col gap-1">Your average heart rate <span className="text-xs/[90%] text-th-plain-grey font-normal">20th September 2026</span></p>
-                  <h1 className="text-[64px]/[90%] font-bold font-cabinet flex items-start gap-1">67<i className="text-xs fi fi-sr-heart text-th-purple-light"></i></h1>
+                  <h1 className="text-[64px]/[90%] font-bold font-cabinet flex items-start gap-1">{formatBpm(bpmAverage)}<i className="text-xs fi fi-sr-heart text-th-purple-light"></i></h1>
                 </div>
 
                 {/* DIV for CHART [BACKEND] */}
                 <div className="col-span-2"></div>
 
                 <Card className="gap-2 font-normal border-b-2 border-th-green-dark rounded-2xl">
-                  <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">68<span className="text-xs/[90%] font-normal font-general text-th-green-dark">bpm</span></p>
+                  <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">{formatBpm(bpmPeak)}<span className="text-xs/[90%] font-normal font-general text-th-green-dark">bpm</span></p>
                   <p className="text-xs/[90%]">Peak</p>
                 </Card>
                 <Card className="gap-2 font-normal border-b-2 border-th-cream-pale rounded-2xl">
-                  <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">65<span className="text-xs font-normal font-general text-th-cream-pale">bpm</span></p>
+                  <p className="flex items-center justify-between text-2xl/[80%] font-medium font-cabinet">{formatBpm(bpmLowest)}<span className="text-xs font-normal font-general text-th-cream-pale">bpm</span></p>
                   <p className="text-xs/[90%]">Lowest</p>
                 </Card>
                 <Card className={`relative items-center py-3 overflow-hidden rounded-lg ${overviewStatus == 'Great!' ? 'bg-th-green-dark/20 text-th-green-dark ' : 'bg-th-purple-light text-th-purple-darker'}`}>
@@ -641,6 +999,11 @@ function Camera() {
               setStage('')
               setResultStat(0)
               resetFaceGate()
+              bpmSamplesRef.current = []
+              setLiveBpmValues([])
+              setBpmStats({ average: null, peak: null, lowest: null })
+              setVitals(null)
+              setBackendStatus('waiting')
               setStageCompleted(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])))
             }} to={'/home'} className={'text-xs/[90%] font-medium w-41 h-9 flex justify-center items-center bg-th-green-dark rounded-2xl text-th-plain-white shrink-0'}>Back to Dashboard</Link>
           </>

@@ -3,7 +3,9 @@
  *
  * The detector runs entirely in the browser with MediaPipe FaceLandmarker -
  * the very same landmark source the Python rPPG engine expects - so the
- * backend (migration_package/) stays untouched. Frames never leave the device.
+ * engine itself (migration_package/) stays untouched. The detected landmarks
+ * and the current camera frame are forwarded to the local rPPG bridge
+ * (backend/main.py), which runs the engine.
  *
  * This module also holds the geometry of the "is the face inside the frame?"
  * check, so it can be unit tested without a browser.

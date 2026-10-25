@@ -64,6 +64,101 @@ function getReadingStats(readings) {
   }
 }
 
+function buildAreaChartPoints(readings) {
+  const chronologicalReadings = [...readings]
+    .filter(({ bpm, timestamp }) => (
+      typeof bpm === 'number'
+      && Number.isFinite(bpm)
+      && Number.isFinite(timestamp)
+    ))
+    .sort((a, b) => a.timestamp - b.timestamp)
+
+  if (!chronologicalReadings.length) return []
+
+  const bpmValues = chronologicalReadings.map(({ bpm }) => bpm)
+  const minBpm = Math.min(...bpmValues)
+  const maxBpm = Math.max(...bpmValues)
+
+  // Tambahkan ruang atas dan bawah supaya grafik tidak menempel di ujung card.
+  const padding = Math.max(5, (maxBpm - minBpm) * 0.2)
+  const chartMin = minBpm - padding
+  const chartMax = maxBpm + padding
+  const chartRange = chartMax - chartMin || 1
+
+  return chronologicalReadings.map((reading, index) => {
+    const x = chronologicalReadings.length === 1
+      ? 50
+      : (index / (chronologicalReadings.length - 1)) * 100
+
+    const y = 100 - ((reading.bpm - chartMin) / chartRange) * 100
+
+    return {
+      ...reading,
+      x,
+      y,
+    }
+  })
+}
+
+function MeasurementAreaChart({ readings }) {
+  const points = buildAreaChartPoints(readings)
+
+  if (!points.length) {
+    return (
+      <div className="flex h-full items-center justify-center text-xs text-th-plain-grey">
+        No measurement data yet
+      </div>
+    )
+  }
+
+  const linePoints = points
+    .map(({ x, y }) => `${x},${y}`)
+    .join(' ')
+
+  const areaPoints = [
+    `${points[0].x},100`,
+    ...points.map(({ x, y }) => `${x},${y}`),
+    `${points[points.length - 1].x},100`,
+  ].join(' ')
+
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden rounded-2xl"
+      aria-label={`Heart rate trend across ${points.length} measurements`}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="h-full w-full"
+        role="img"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="measurement-area-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#DDB8D6" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#F1E3EF" stopOpacity="0.45" />
+          </linearGradient>
+        </defs>
+
+        <polygon
+          points={areaPoints}
+          fill="url(#measurement-area-gradient)"
+        />
+
+        <polyline
+          points={linePoints}
+          fill="none"
+          stroke="#D4AED0"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  )
+}
+
 function getWeeklyTrend(readings, weekStart) {
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart)
@@ -262,31 +357,55 @@ function Home() {
             </div>
 
             <div className="flex items-center gap-4">
-              <h1 className="text-[64px]/[80%] font-extrabold text-th-plain-black font-cabinet flex items-start">{readingStats.average ?? '-'}<i className="text-xs fi fi-sr-heart text-th-purple-light -ml-1.5"></i></h1>
+              <h1 className="text-[64px]/[80%] font-extrabold text-th-plain-black font-cabinet flex items-start">
+                {readingStats.average ?? '-'}
+                <i className="text-xs fi fi-sr-heart text-th-purple-light -ml-1.5"></i>
+              </h1>
+
               <div className="flex flex-col gap-1">
                 <p className="text-lg/[90%] font-medium">Average</p>
-                <span className="text-xs/[90%] text-th-plain-grey">beats per minute</span>
+                <span className="text-xs/[90%] text-th-plain-grey">
+                  beats per minute
+                </span>
               </div>
             </div>
 
-            {/* INFO DIV */}
             <div className="flex w-full gap-8">
               <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%]">Peak</p>
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{readingStats.peak ?? '—'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1">
+                  <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">
+                    {readingStats.peak ?? '—'}
+                  </span>
+                  bpm
+                </p>
               </div>
+
               <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%]">Lowest</p>
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{readingStats.lowest ?? '—'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1">
+                  <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">
+                    {readingStats.lowest ?? '—'}
+                  </span>
+                  bpm
+                </p>
               </div>
+
               <div className="flex flex-col flex-1 gap-3">
                 <p className="text-xs/[90%]">Resting</p>
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{restingBpm ?? '—'}</span>bpm</p>
+                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1">
+                  <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">
+                    {restingBpm ?? '—'}
+                  </span>
+                  bpm
+                </p>
               </div>
             </div>
 
-            {/* CHART DIV [BACKEND] */}
-            <div className="h-28"></div>
+            {/* FULL MEASUREMENT HISTORY AREA CHART */}
+            <div className="h-28 w-full">
+              <MeasurementAreaChart readings={readings} />
+            </div>
           </Card>
           <Link to={'/insights'} className="flex items-center justify-between p-4 text-sm/[90%] text-white">View Last Measurement <i className="fi fi-rr-arrow-right text-base/[80%]"></i></Link>
         </div>
