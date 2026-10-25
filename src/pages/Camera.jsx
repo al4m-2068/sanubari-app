@@ -185,13 +185,13 @@ function LiveMeasurementAreaChart({ bpmValues }) {
 function Camera() {
 
   const addMeasurement = useSariAuthStore(state => state.addMeasurement)
-  const [start, setStart] = useState(false)
+  const [start, setStart] = useState(true)
   const [resultStat, setResultStat] = useState(0)
-  const [stage, setStage] = useState('')
+  const [stage, setStage] = useState('result')
   const [stageCompleted, setStageCompleted] = useState({
-    face: false,
-    movement: false,
-    light: false,
+    face: true,
+    movement: true,
+    light: true,
   })
   const getStageClass = (label) => stage === label ? 'onStage' : stageCompleted[label] ? 'check' : 'uncheck'
   const notMeasureStages = stage !== 'measuring' && stage !== 'result'
@@ -748,7 +748,7 @@ function Camera() {
   }, [stage, detectorReady, detectorError])
 
   return (
-    <div className={`flex flex-col items-center h-full pb-33 ${stage === 'measuring' ? 'gap-0' : stage === 'result' ? 'gap-12 overflow-y-auto scrollbar-none' : 'gap-7'}`}>
+    <div className={`flex flex-col items-center ${stage === 'measuring h-full' ? 'gap-0' : stage === 'result' ? 'gap-12' : 'gap-7 h-full'}`}>
       {/* Offscreen canvas: turns the current video frame into the JPEG that is
           sent to the rPPG bridge. */}
       <canvas ref={rppgCanvasRef} className="hidden" aria-hidden="true" />
@@ -773,9 +773,8 @@ function Camera() {
             ref={containerRef}
             style={{
               width: 'calc(100% + 16px * 2)',
-              height: '532px'
             }}
-            className={`bg-black shrink-0 items-center justify-center flex flex-col relative overflow-hidden`}
+            className={`bg-black shrink-0 flex-2 items-center justify-center flex flex-col relative overflow-hidden`}
           >
             <video
               ref={videoRef}
@@ -785,7 +784,7 @@ function Camera() {
               className="absolute inset-0 z-0 w-full h-full object-cover -scale-x-100"
             />
         
-            <div className="absolute inset-0 z-[1] bg-th-green-darker/30 mask-t-to-transparent mask-t-from-10 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
+            <div className="absolute inset-0 z-1 bg-th-green-darker/30 mask-t-to-transparent mask-t-from-0 mask-t-to-40 backdrop-blur-xs pointer-events-none" />
         
             {stage === 'face' ? (
               <img
@@ -832,7 +831,7 @@ function Camera() {
 
         {notMeasureStages && (
 
-          <div className="flex flex-col items-center w-full h-full gap-7">
+          <div className="flex flex-col items-center w-full flex-1 gap-7 shrink-0">
             {/* DIV for PREP INFO [stageTexts] */}
             <div className={`flex flex-col items-center justify-center h-full w-full gap-2 text-th-plain-grey text-center px-6.5`}>
               {stageCompleted !== true && stage !== 'finished' && notMeasureStages && (
@@ -875,7 +874,7 @@ function Camera() {
 
         {/* CARD for MEASUREMENT INFO [BACKEND] */}
         {stage === 'measuring' && (
-          <Card className={'mt-2 h-full w-full rounded-t-none bg-transparent'}>
+          <Card className={'mt-2 h-full w-full rounded-t-none bg-transparent flex-1'}>
             <div className="flex justify-between">
               <p className="flex flex-col text-xs/[90%] gap-1 font-medium">
                 Stay Still!

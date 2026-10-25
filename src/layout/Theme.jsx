@@ -113,7 +113,7 @@ function Theme() {
           <Button className="cursor-pointer" onClick={() => navigate('/profile')}><img src={user.profilePicture} referrerPolicy="no-referrer" className="object-cover object-center size-10 rounded-2xl" alt={`${user.name?.first ?? ''} profile picture`} /></Button>
         </div>
       </header>
-      <main ref={mainRef} className={`relative flex flex-col h-full px-4 overflow-y-auto scrollbar-none ${pathname === '/home' && 'pt-18'} transition-all duration-700`}>
+      <main ref={mainRef} className={`relative flex flex-col h-full px-4 overflow-y-auto scrollbar-none ${pathname === '/home' && 'pt-18'} transition-all duration-700 pb-27`}>
         <Outlet/>
       </main>
       <nav className="absolute bottom-0 left-0 w-full p-4 z-9">

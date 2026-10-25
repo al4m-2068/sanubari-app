@@ -144,8 +144,8 @@ function getYearlyTrend(measurements) {
 
 function Insights() {
   return (
-    <div className="flex flex-col items-center gap-5 pt-16 pb-27">
-      <div className="flex bg-white rounded-2xl text-th-green-dark p-0.5 sticky top-4">
+    <div className="flex flex-col items-center gap-5 pt-16">
+      <div className="flex bg-white rounded-2xl text-th-green-dark p-0.5 sticky top-4 z-10">
         <NavLink className={({ isActive }) => (`transition-all duration-500 flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/overview'}>Overview</NavLink>
         <NavLink className={({ isActive }) => (`transition-all duration-500 flex w-28 h-8 px-4 items-center justify-center rounded-[14px] ${isActive && 'bg-th-green-dark text-white'}`)} to={'/insights/history'}>History</NavLink>
       </div>

@@ -119,8 +119,8 @@ function Profile() {
   if (!user) return null
 
   return (
-    <div className="flex flex-col items-center h-full pt-16 gap-6 overflow-y-auto scrollbar-none pb-30">
-      <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center pt-16 gap-6">
+      <div className="flex flex-col items-center gap-8 z-2">
         <img src={user.profilePicture} referrerPolicy="no-referrer" alt="" className="size-48 rounded-[64px] border-[1.2px] border-th-plain-grey object-cover object-center" />
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl/[110%] font-bold text-th-plain-black font-cabinet">{user.name.first} {user.name.last}</h1>
@@ -150,15 +150,15 @@ function Profile() {
           <Button onClick={() => setSupportOverlay(true)} className={'p-6 gap-6 w-full items-center'}><i className="fi fi-rr-question text-base/[80%]"/>Help & Support<i className="fi fi-rr-angle-right text-[8px]/[80%] ml-auto" /></Button>
           <Button onClick={() => setLogoutPopup(true)} className={'p-6 gap-6 w-full items-center'}><i className="fi fi-rr-leave text-base/[80%]"/>Log Out<i className="fi fi-rr-angle-right text-[8px]/[80%] ml-auto" /></Button>
         </Card>
-        <p className="col-span-2 text-center text-xs/[130%]  text-th-plain-white">
+        <p className="col-span-2 text-center text-xs/[130%] mb-4 text-th-plain-white">
           Designated for personal wellness insights, not a<br/>replacement for professional medical device
         </p>
       </div>
-      <div className="flex flex-col w-full absolute bottom-0">
+      <div className="fixed bottom-0 flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
         <div className="relative flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
           <img src={homeFooter} alt="SANUBARI Logo" className="inline-block scale-110" />
         </div>
-        <div className="h-52 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
+        <div className="h-70 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
       </div>
       {logoutPopup && (
         <Drawer onClose={() => {
