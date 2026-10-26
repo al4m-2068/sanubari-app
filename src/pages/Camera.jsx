@@ -874,58 +874,57 @@ function Camera() {
 
         {/* CARD for MEASUREMENT INFO [BACKEND] */}
         {stage === 'measuring' && (
-          <Card className={'mt-2 h-full w-full rounded-t-none bg-transparent flex-1'}>
-            <div className="flex justify-between">
-              <p className="flex flex-col text-xs/[90%] gap-1 font-medium">
-                Stay Still!
-                <span className="font-normal">Measuring...</span>
-              </p>
-              <span className="flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-lg bg-th-green-dark/20 text-th-green-dark">
-                <div className={`rounded-full size-2 ${vitals?.motion?.rejected ? 'bg-th-purple-light' : 'bg-th-green-dark'}`}></div>
-                {vitals?.motion?.rejected ? 'Moving' : 'Stable'}
-              </span>
-            </div>
-            {/* CHART DIV */}
-            <div className="h-32 w-full">
-              <LiveMeasurementAreaChart bpmValues={liveBpmValues} />
-            </div>
-
-            {/* LIVE VITALS FROM THE rPPG BRIDGE */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
-              <span className="flex items-center gap-1">
-                <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(currentBpm)}</span>bpm
-              </span>
-              <span>SQI <span className="text-th-plain-black font-medium">{sqiValue ?? '--'}</span></span>
-              <span>Confidence <span className="text-th-plain-black font-medium">{confidenceValue ?? '--'}</span></span>
-              <span>{calibrationText}</span>
-            </div>
-
-            {(backendError || cameraStopped || backendStatus === 'no-face') && (
-              <p className="text-xs/[110%] text-th-plain-grey">
-                {backendError
-                  ? 'Measurement server unreachable - retrying...'
-                  : cameraStopped
-                    ? 'Camera stopped - please restart the measurement'
-                    : 'Face not detected - keep your face in the frame'}
-              </p>
-            )}
-
-            {/* INFO DIV */}
-            <div className="flex w-full gap-8">
-              <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmAverage)}</span>bpm</p>
-                <p className="text-lg/[90%]">Average</p>
+          <div className="flex-1 w-full overflow-y-auto scrollbar-none rounded-3xl">
+            <Card className={'mt-2 w-full rounded-t-none bg-transparent flex-1'}>
+              <div className="flex justify-between">
+                <p className="flex flex-col text-xs/[90%] gap-1 font-medium">
+                  Stay Still!
+                  <span className="font-normal">Measuring...</span>
+                </p>
+                <span className="flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-lg bg-th-green-dark/20 text-th-green-dark">
+                  <div className={`rounded-full size-2 ${vitals?.motion?.rejected ? 'bg-th-purple-light' : 'bg-th-green-dark'}`}></div>
+                  {vitals?.motion?.rejected ? 'Moving' : 'Stable'}
+                </span>
               </div>
-              <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmPeak)}</span>bpm</p>
-                <p className="text-lg/[90%]">Peak</p>
+              {/* CHART DIV */}
+              <div className="h-32 w-full">
+                <LiveMeasurementAreaChart bpmValues={liveBpmValues} />
               </div>
-              <div className="flex flex-col flex-1 gap-3">
-                <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmLowest)}</span>bpm</p>
-                <p className="text-lg/[90%]">Lowest</p>
+              {/* LIVE VITALS FROM THE rPPG BRIDGE */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
+                <span className="flex items-center gap-1">
+                  <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(currentBpm)}</span>bpm
+                </span>
+                <span>SQI <span className="text-th-plain-black font-medium">{sqiValue ?? '--'}</span></span>
+                <span>Confidence <span className="text-th-plain-black font-medium">{confidenceValue ?? '--'}</span></span>
+                <span>{calibrationText}</span>
               </div>
-            </div>
-          </Card>
+              {(backendError || cameraStopped || backendStatus === 'no-face') && (
+                <p className="text-xs/[110%] text-th-plain-grey">
+                  {backendError
+                    ? 'Measurement server unreachable - retrying...'
+                    : cameraStopped
+                      ? 'Camera stopped - please restart the measurement'
+                      : 'Face not detected - keep your face in the frame'}
+                </p>
+              )}
+              {/* INFO DIV */}
+              <div className="flex w-full gap-8">
+                <div className="flex flex-col flex-1 gap-3">
+                  <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmAverage)}</span>bpm</p>
+                  <p className="text-lg/[90%]">Average</p>
+                </div>
+                <div className="flex flex-col flex-1 gap-3">
+                  <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmPeak)}</span>bpm</p>
+                  <p className="text-lg/[90%]">Peak</p>
+                </div>
+                <div className="flex flex-col flex-1 gap-3">
+                  <p className="text-xs/[90%] text-th-plain-grey flex items-center gap-1"><span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(bpmLowest)}</span>bpm</p>
+                  <p className="text-lg/[90%]">Lowest</p>
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* CARD for MOVEMENT POPUP [BACKEND] */}

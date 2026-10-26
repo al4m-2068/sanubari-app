@@ -20,7 +20,7 @@ function Onboarding() {
   const [stage, setStage] = useState(null)
 
   return (
-    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative justify-between overflow-y-auto`}>
+    <div className={`flex flex-col px-8 pt-25 pb-12 w-full h-full bg-[linear-gradient(to_bottom,var(--color-th-plain-white)_80%,var(--color-th-green-dark))] bg-size-[100%_110%] relative justify-between ${stage != 'howitworks' ? 'overflow-hidden' : 'overflow-y-auto gap-10'}`}>
       {!stage && (
         <>
         <div className="flex flex-col gap-6 items-start z-2">
@@ -30,7 +30,7 @@ function Onboarding() {
           </div>
           <p className='text-lg/[130%]'>SANUBARI uses rPPG technology to measure your heart rate through your phone’s camera - safely, quickly and easily.</p>
         </div>
-        <img src={enterIllust} alt="" className='w-full h-auto origin-bottom scale-140 absolute top-170 mask-b-to-75 mask-b-from-65 -translate-y-25' />
+        <img src={enterIllust} alt="" className='w-full h-auto origin-bottom scale-140 absolute top-140 mask-b-to-75 mask-b-from-65 -translate-y-25' />
         <Button onClick={() => setStage('howitworks')} className={'z-3 rounded-3xl text-center bg-th-green-light text-lg/[90%] justify-center font-medium text-th-plain-white py-6 px-16'}>Get Started</Button>
         </>
       )}
@@ -51,7 +51,7 @@ function Onboarding() {
             </Card>
           ))}
         </div>
-        <Link onClick={() => setStage('howitworks')} className={'mt-2 rounded-3xl text-center bg-th-green-light text-lg/[90%] font-medium text-th-plain-white py-6 px-16 justify-center'} to={'/auth/sign-in'}>Get Started!</Link>
+        <Link onClick={() => setStage('howitworks')} className={'mt-2 rounded-3xl text-center sticky bottom-0 bg-th-green-light text-lg/[90%] font-medium text-th-plain-white py-6 px-16 justify-center'} to={'/auth/sign-in'}>Get Started!</Link>
         </>
       )}
     </div>
