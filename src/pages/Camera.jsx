@@ -242,8 +242,8 @@ function Camera() {
   const currentBpm = vitals?.bpm > 0 ? vitals.bpm : null
   const { average: bpmAverage, peak: bpmPeak, lowest: bpmLowest } = bpmStats
   const hasReading = bpmAverage !== null
-  /** Overview of the session: only positive when a real reading was captured. */
-  const overviewStatus = hasReading ? 'Great!' : 'No data'
+  const isAverageInHealthyRange = hasReading && bpmAverage >= 30 && bpmAverage <= 100
+  const overviewStatus = !hasReading ? 'No data' : isAverageInHealthyRange ? 'Great!' : 'Poor'
   /** Formats a BPM for the UI: missing measurements show as "--". */
   const formatBpm = (value) => (value === null || value <= 0 ? '--' : String(value))
   const sqiValue = vitals ? Math.round(vitals.sqi) : null
@@ -394,10 +394,10 @@ function Camera() {
   
   useEffect(() => {
     if (stage !== 'measuring') return
-    if (resultStat === 100) {
-      setStage('result')
-      return
-    }
+    // if (resultStat === 100) {
+    //   setStage('result')
+    //   return
+    // }
     const increment = 100 / (expectedTime / perMs)
 
     const resultStatTimeout = setTimeout(() => {
@@ -794,7 +794,33 @@ function Camera() {
                 className="relative z-10 pointer-events-none"
               />
             ) : stage === 'measuring' ? (
-              <div className="absolute bottom-0 flex w-full h-2 translate-y-1/2 z-10">
+              <div className="absolute bottom-0 flex flex-col justify-end w-full translate-y-1 z-10 gap-3 bg-linear-0 from-th-plain-black/50 from-20% to-transparent">
+                {(backendError || cameraStopped || backendStatus === 'no-face') && (
+                  <p className="text-xs/[110%] w-full text-th-plain-grey text-center">
+                    {backendError
+                      ? 'Measurement server unreachable - retrying...'
+                      : cameraStopped
+                        ? 'Camera stopped - please restart the measurement'
+                        : 'Face not detected - keep your face in the frame'}
+                  </p>
+                )}
+                <div className="w-full justify-center flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
+                  <span><span className="text-th-plain-black font-medium">{formatBpm(currentBpm)}</span> bpm</span>
+                  <span>SQI <span className="text-th-plain-black font-medium">{sqiValue ?? '--'}</span></span>
+                  <span>Confidence <span className="text-th-plain-black font-medium">{confidenceValue ?? '--'}</span></span>
+                  <span>{calibrationText}</span>
+                </div>
+                {stage === 'face' && (
+                  <p className="text-xs/[110%] text-th-plain-grey">
+                    {detectorError
+                      ? 'Face detection is unavailable. Please reload the page and enable hardware acceleration.'
+                      : !detectorReady
+                        ? 'Preparing face detection...'
+                        : faceInFrame
+                          ? 'Face detected, hold still!'
+                          : 'Place your face inside the frame'}
+                  </p>
+                )}
                 <div
                   className="flex h-2 transition-all duration-200 bg-th-green-dark w-8"
                   style={{ width: `${resultStat}%` }}
@@ -842,17 +868,6 @@ function Camera() {
               {notMeasureStages && stageTexts[stage] && stage !== 'finished' &&
                 <p className={`text-lg/[110%] ${stage === 'finished' && 'text-th-green-dark'}`}>{stageTexts[stage].p}</p>
               }
-              {stage === 'face' && (
-                <p className="text-xs/[110%] text-th-plain-grey">
-                  {detectorError
-                    ? 'Face detection is unavailable. Please reload the page and enable hardware acceleration.'
-                    : !detectorReady
-                      ? 'Preparing face detection...'
-                      : faceInFrame
-                        ? 'Face detected, hold still!'
-                        : 'Place your face inside the frame'}
-                </p>
-              )}
               {stage === 'finished' && stageCompleted && notMeasureStages && (
                 <Button className={'h-23 border-2 text-th-green-dark rounded-3xl text-2xl/[110%] font-medium bg-th-green-dark/20 w-full justify-center'} onClick={async () => {
                   measurementSavedRef.current = false
@@ -882,7 +897,7 @@ function Camera() {
                   <span className="font-normal">Measuring...</span>
                 </p>
                 <span className="flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-lg bg-th-green-dark/20 text-th-green-dark">
-                  <div className={`rounded-full size-2 ${vitals?.motion?.rejected ? 'bg-th-purple-light' : 'bg-th-green-dark'}`}></div>
+                  <div className={`rounded-full size-2 ${vitals?.motion?.rejected ? 'bg-th-purple-light' : 'bg-th-green-dark'}`}/>
                   {vitals?.motion?.rejected ? 'Moving' : 'Stable'}
                 </span>
               </div>
@@ -891,23 +906,14 @@ function Camera() {
                 <LiveMeasurementAreaChart bpmValues={liveBpmValues} />
               </div>
               {/* LIVE VITALS FROM THE rPPG BRIDGE */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
+              {/* <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs/[110%] text-th-plain-grey">
                 <span className="flex items-center gap-1">
                   <span className="text-2xl/[90%] text-th-plain-black font-medium font-cabinet">{formatBpm(currentBpm)}</span>bpm
                 </span>
                 <span>SQI <span className="text-th-plain-black font-medium">{sqiValue ?? '--'}</span></span>
                 <span>Confidence <span className="text-th-plain-black font-medium">{confidenceValue ?? '--'}</span></span>
                 <span>{calibrationText}</span>
-              </div>
-              {(backendError || cameraStopped || backendStatus === 'no-face') && (
-                <p className="text-xs/[110%] text-th-plain-grey">
-                  {backendError
-                    ? 'Measurement server unreachable - retrying...'
-                    : cameraStopped
-                      ? 'Camera stopped - please restart the measurement'
-                      : 'Face not detected - keep your face in the frame'}
-                </p>
-              )}
+              </div> */}
               {/* INFO DIV */}
               <div className="flex w-full gap-8">
                 <div className="flex flex-col flex-1 gap-3">
@@ -953,8 +959,8 @@ function Camera() {
             <div className="flex flex-col items-center justify-center gap-2 text-center text-th-plain-black w-49 mt-23">
               <h1 className="text-4xl/[110%] font-bold text-th-green-darker font-cabinet">Well Done!</h1>
               <p className="text-xs/[110%]">{hasReading
-                ? 'your heart rate is within a healthy range, with an average of'
-                : 'we could not capture a stable reading, please try again in better light'}</p>
+                ? `Your heart rate is ${isAverageInHealthyRange ? 'within' : 'outside'} a healthy range, with an average of`
+                : 'We could not capture a stable reading, please try again in better light'}</p>
             </div>
             <div className="flex flex-col w-full gap-3">
               <Card className={'h-64 grid auto-rows-max gap-x-2 gap-y-4 grid-cols-[132px_132px_1fr] w-full rounded-3xl'}>
@@ -987,7 +993,7 @@ function Camera() {
                   <i className="fi fi-rr-beacon text-5xl/[80%]"></i>
                 </div>
                 <div className="flex flex-col items-start gap-3 p-4 flex-2">
-                  <p className="font-medium text-xs/[110%] text-th-plain-white">Your heart rate is within a healthy range! want to see how it compares with your past measurements?</p>
+                  <p className="font-medium text-xs/[110%] text-th-plain-white">Your heart rate is {isAverageInHealthyRange ? 'within' : 'outside'} a healthy range! Want to see how it compares with your past measurements?</p>
                   <Link to={'/chatbot'} className={'border-[1.2px] border-th-plain-grey bg-white px-4 py-3 rounded-2xl text-xs/100 text-th-plain-black'}>Ask SARI Chatbot</Link>
                 </div>
               </Card>
