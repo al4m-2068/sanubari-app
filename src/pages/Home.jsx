@@ -488,7 +488,7 @@ function Home() {
         </div>
       </div>
       {/* // CHATBOT CTA */}
-      <div className="flex">
+      <div className="flex w-full justify-center">
         <Card onClick={() => navigate('/chatbot/session')} className={'hover:scale-107 group transition-all duration-500 p-6 justify-between h-42 text-th-plain-white rounded-[36px] bg-[radial-gradient(68.99%_68.99%_at_50%_31.31%,#6A624D_0%,#8C8268_18.54%,#A4B0A3_46.99%,#DCDACA_100%)] w-56 shrink-0 z-2 cursor-pointer'}>
           <i className="fi fi-rr-microphone text-2xl/[80%] group-hover:-translate-y-1 transition-all duration-500" />
           <div className="flex flex-col gap-2">
@@ -513,7 +513,7 @@ function Home() {
       </div>
       <footer className="relative flex flex-col items-center justify-center mt-8 h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
         <img src={sariLogo} alt="SANUBARI Logo" className="inline-block size-16 z-2 absolute" />
-        <img src={homeFooter} alt="SANUBARI Logo" className="inline-block scale-110" />
+        <img src={homeFooter} alt="SANUBARI Logo" className="w-full inline-block scale-110" />
       </footer>
       <div className="h-22 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
     </div>

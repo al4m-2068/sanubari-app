@@ -119,7 +119,7 @@ function Theme() {
       <nav className="absolute bottom-0 left-0 w-full p-4 z-9">
         <ul className="bg-th-plain-white flex justify-between p-1.5 w-full rounded-3xl">
           {pageList.map(({path, icon, iconActive}, index) => (
-            <li key={path} className="flex-1">
+            <li key={path} className="flex-1 flex justify-center">
               <NavLink to={path} className={({ isActive }) => `
                 flex flex-col relative gap-1 items-center justify-center size-16 rounded-3xl ${index == 2 ? 'text-th-plain-white bg-th-purple-light' : isActive && index !== 2 ? 'text-th-green-dark' : 'text-th-plain-grey'}
               `}>

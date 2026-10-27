@@ -154,12 +154,13 @@ function Profile() {
           Designated for personal wellness insights, not a<br/>replacement for professional medical device
         </p>
       </div>
-      <div className="sticky -bottom-27 mt-[-55%] flex flex-col items-center justify-center w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
+      <div className="absolute bottom-0 flex flex-col items-center justify-center w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
         <div className="relative flex flex-col items-center justify-center h-35 w-full shrink-0 bg-contain bg-bottom bg-no-repeat">
-          <img src={homeFooter} alt="SANUBARI Logo" className="inline-block scale-110" />
+          <img src={homeFooter} className="w-full scale-110" />
         </div>
-        <div className="h-55 bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
+        <div className="h-[calc(50vh-200px)] bg-th-green-light w-[calc(100%+16px*2)] self-center -mt-12 shrink-0" />
       </div>
+
       {logoutPopup && (
         <Drawer onClose={() => {
           setLogoutPopup(false)

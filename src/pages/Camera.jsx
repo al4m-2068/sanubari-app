@@ -394,10 +394,10 @@ function Camera() {
   
   useEffect(() => {
     if (stage !== 'measuring') return
-    // if (resultStat === 100) {
-    //   setStage('result')
-    //   return
-    // }
+    if (resultStat === 100) {
+      setStage('result')
+      return
+    }
     const increment = 100 / (expectedTime / perMs)
 
     const resultStatTimeout = setTimeout(() => {
@@ -992,8 +992,10 @@ function Camera() {
                 <div className="flex items-center self-stretch justify-center flex-1 shrink-0 text-th-cream-pale bg-th-cream aspect-square">
                   <i className="fi fi-rr-beacon text-5xl/[80%]"></i>
                 </div>
-                <div className="flex flex-col items-start gap-3 p-4 flex-2">
-                  <p className="font-medium text-xs/[110%] text-th-plain-white">Your heart rate is {isAverageInHealthyRange ? 'within' : 'outside'} a healthy range! Want to see how it compares with your past measurements?</p>
+                <div className="flex flex-col items-start gap-3 p-4 flex-2 justify-between">
+                  <p className="font-medium text-xs/[110%] text-th-plain-white">{hasReading
+                    ? `Your heart rate is ${isAverageInHealthyRange ? 'within' : 'outside'} a healthy range! Want to see how it compares with your past measurements?`
+                    : 'Need help understanding your heart rate? Ask SARI Chatbot for guidance.'}</p>
                   <Link to={'/chatbot'} className={'border-[1.2px] border-th-plain-grey bg-white px-4 py-3 rounded-2xl text-xs/100 text-th-plain-black'}>Ask SARI Chatbot</Link>
                 </div>
               </Card>
